@@ -33,7 +33,7 @@ public:
 
   void readFromFile(string);
   void print();
-  //ostream& print(ostream&);
+  ostream& print(ostream&);
   void printIntoMatFile();
   void printIntoFile(); // for gnuplot
 
@@ -67,6 +67,17 @@ template <typename T>
 Signal<T>::~Signal()
 {
   delete _value;
+}
+
+template <typename T>
+ostream& Signal<T>::print(ostream& out)
+{
+  //  assert(fout.is_open());
+  int i;
+  for(i=0; i<_size; i++ )
+    out << i << " " <<  _value[i] << endl;
+  out << i << " " << 0 << endl;
+  return out;
 }
 
 template <typename T>

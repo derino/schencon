@@ -18,7 +18,7 @@ using namespace std;
 
 // Global Variables
 
-int M = 96;
+int L = 96;
 
 
 float rand01()
@@ -26,7 +26,7 @@ float rand01()
   return ((float) rand()) / RAND_MAX;
 }
 
-Task* createTask(int i, bool preemptive, float par)
+Task* createTask(int i, bool preemptable, float par)
 {
   Task* j = new Task();
 
@@ -34,6 +34,9 @@ Task* createTask(int i, bool preemptive, float par)
   stringstream jNameStr;
   jNameStr << "J_" << i;
   j->setName( jNameStr.str() );
+
+  // - set preemptability
+  j->setPr(preemptable);
 
   // - set task's arrival time
   j->setA(0);
@@ -43,13 +46,13 @@ Task* createTask(int i, bool preemptive, float par)
   int tp = 2 + rand() % 22;
 
   //  Max # of repeating periods = maxR
-  int maxR = M/tp; // floor of the division. not necessary due to dividing two ints.
+  int maxR = L/tp; // floor of the division. not necessary due to dividing two ints.
 
   //  # of repeating periods = R
   int R = 1 + rand() % maxR;          //gives a number in [1,maxR]
 
   // Randomly deadline assigning
-  j->setD( ((M - tp)*rand01()) + tp );
+  j->setD( ((L - tp*R)*rand01()) + tp*R );
 
   // - set task's load profile
   //  average power of sinosoid: aS
@@ -108,6 +111,7 @@ int main()
 	  sp->setPrR( prr_arr[a] );
 	  sp->setLPAR( lpar_arr[b] );
 	  sp->setN(tss);
+	  sp->setL(L);
 
 	  for (int i = 0; i < tss; i++)
 	    {
@@ -126,7 +130,6 @@ int main()
 	      Task* j_i = createTask(i,preemptive, par);
 	      sp->J()->push_back(j_i);
 
-	      //cout << preemptive << "\t" << par << endl;
 	    }
 	  //      TODO:Problem ismine uygun folder olusturup, bir onceki loopta olusan taski icine at
 	  // create problem folder

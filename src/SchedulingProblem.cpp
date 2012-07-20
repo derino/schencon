@@ -92,7 +92,7 @@ string SchedulingProblem::name()
 {
   // TODO add other parameters of the problem such as LPAR, PRR etc.
   std::stringstream _str;
-  _str << "Problem_N" << _N << "_LPAR" << _LPAR << "_PrR" << _PrR;
+  _str << "Problem_N" << _N << "_L" << _L << "_LPAR" << _LPAR << "_PrR" << _PrR;
   return _str.str();
 }
 
@@ -124,11 +124,28 @@ void SchedulingProblem::write()
   ofstream fout1("problem.txt");
   //ofstream fout1( (filename+".txt").c_str() );
   
-  fout1 << "TaskSet Size:\t" << _N << endl
-    	<< "Low Par Ration:\t" << _LPAR << endl
-  	<< "Preemptive Ratio:\t" << _PrR << endl;
+  fout1 << _N << endl // task set size
+  	<< _L << endl // schedule length
+    	<< _LPAR << endl // low peak to average ration
+  	<< _PrR << endl; // ratio of preemptible tasks
   // 	<< E() << endl
   // 	<< endl;
   fout1.close();
 
+  for (int n = 0; n < _N; n++)
+  {
+    stringstream j_str;
+    j_str << "J_" << n << ".txt";
+    ofstream fout2( j_str.str().c_str() );
+    fout2 << _J.at(n)->getA() << endl
+	  << _J.at(n)->getD() << endl
+	  << _J.at(n)->getPr() << endl;
+    fout2.close();
+
+    stringstream l_str;
+    l_str << "L_" << n << ".txt";
+    ofstream fout3( l_str.str().c_str() );
+    _J.at(n)->getL()->print(fout3);
+    fout3.close();
+  } 
 }
