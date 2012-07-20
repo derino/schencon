@@ -162,6 +162,17 @@ T max(Signal<T>& s)
   return max;
 }
 
+template <typename T>
+T max(T* s, int n)
+{
+  T max = 0;
+  for(int i=0; i<n; i++)
+    if(s[i] > max)
+      max = s[i];
+  return max;
+}
+
+
 enum ScheduleValidity {VALID=0, EARLY_START, LATE_FINISH, NOT_PREEMPTABLE, LESS_OR_MORE_SCHEDULED, POWER_OVERUSE};
 
 // s_i is an array of 0s and 1s that denote whether the task is running or not.

@@ -63,6 +63,9 @@ SchedulingProblem* SchedulingProblemReader::read()
   sp->setL(L);
   fin.close();
 
+  // set PH as all zeros
+  sp->setPH();
+
   // read P_max.txt
   ifstream fin2("P_max.txt");
   if ( !fin2.is_open())
@@ -70,9 +73,13 @@ SchedulingProblem* SchedulingProblemReader::read()
       cout << "Unable to open file P_max.txt" << endl; 
       exit(EXIT_FAILURE);
     }
-  double PMax = -1;
-  fin2 >> PMax;
-  sp->setPMax(PMax);
+  double PMaxLow = -1;
+  double PMaxMedium = -1;
+  double PMaxHigh = -1;
+  fin2 >> PMaxLow;
+  fin2 >> PMaxMedium;
+  fin2 >> PMaxHigh;
+  sp->setPMaxRange(PMaxLow, PMaxMedium, PMaxHigh);
   fin2.close();
 
   // read price signal

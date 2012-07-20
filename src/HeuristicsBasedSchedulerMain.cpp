@@ -12,6 +12,7 @@
 #include <momh/tlistset.h>
 #include <momh/nondominatedset.h>
 
+#include "SchedulingProblemReader.h"
 #include "Signal.h"
 #include "Task.h"
 #include "util.h"
@@ -19,134 +20,10 @@
 #include "MOS.h"
 #include <math.h>
 #include <time.h>
-
-//  TODO: Fix this, this should come from time.h actually
-#define CLOCKS_PER_SEC  1000000l
-
 using namespace std;
-//using namespace boost::lambda;
-
-  // We may assume the scheduling to be done once for 
-  // all tasks acc. to the predictions at the beginning.
-  // Or, we may run the scheduling solver at a specific 
-  // period acc. to the updated predictions and the 
-  // new/remaining task set.
-
-  // the time-dependent variables will be represented by 
-  // their values at discrete times.
-  // How to choose the sampling period(T)?
-  // Assumption is that every task is pausable/resumable in T time.
-  // Also power profiles for every task are given at T resolution.
-
-  // t=0 => n=0 is the min of all arrival times.
-  // n_max is the (max of all deadlines)/T
-  // all time dependent variables are arrays of size n_max.
-  
-  // We assume that preemption doesn't introduce extra energy costs. (PP is not affected by preemption.)
-
-  // p_min: min. price signal (hour, CHF?)
-  // 0 0.10
-  // 1 0.09
-  // 2 0.09
-  // ...
-  // 23 0.11
-  // e.g. if price signal changes in every hour and for T = 1 min
-  // p_min = {0.10, 0.10, 0.10, 0.10, ... (60 of them) ...,  0.09, 0.09, 0.09, ... (60 of them) ...}
-
-  // P_H: harvested power
-
-  // J: task set
-  // j_i: {a_i(arrival time), d_i(deadline), PP_i(power profile), pr(preemptability)}
-  // power profile for washing machine program A: (min(should be divisible by T), watts)
-  // 0 10.0
-  // 5 4.5
-  // 20 15.0
-  // 23 0
-  // implies pp = {10, 10, 10, 10, 10, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5,
-  //               4.5, 4.5, 4.5, 4.5, 4.5, 15, 15, 15} for T = 1 min.
-
-  // P_max: max. power that can be withdrawn by the total of tasks.
-  
-
-
-// use signals from experiment 2
-//extern string ex = "ex2/";
-
 
 int main()
 {
-	// P_max is fixed
-	/*// for ex1
-	double P_max = 5;*/
-
-	// for case_study
-	double P_max = 15;
-
-	// generate a price signal array p_min
-	// read price signal
-	Signal<double> p_min("p_min", "p_min.txt");
-	//  ONDEBUG( p_min.printIntoMatFile() );
-
-	// generate a harvested power array P_H
-	// read harvested power
-	Signal<double> P_H("P_H", "P_H.txt");
-	// ONDEBUG( P_H.printIntoMatFile() );
-
-	// generate tasks
-	// read jobs
-	vector<Task*> J; // keeps the list of tasks
-
-/*	// Task set for ex1
-	Task J_1("J_1", 0, 9, false, "L_1.txt");
-	J.push_back(&J_1);
-	Task J_2("J_2", 2, 10, true, "L_2.txt");
-	J.push_back(&J_2);
-	Task J_3("J_3", 3, 7, false, "L_3.txt");
-	J.push_back(&J_3);*/
-
-	// Task set for ex2
-//	Task J_1("J_1", 0, 9, false, "L_1.txt");
-//	J.push_back(&J_1);
-//	Task J_3("J_3", 3, 7, false, "L_3.txt");
-//	J.push_back(&J_3);
-//	Task J_2("J_2", 2, 10, true, "L_2.txt");
-//	J.push_back(&J_2);
-
-/*	// Task set for case_study
-	Task J_1("J_1", 180, 540, false, "L_1.txt");
-	J.push_back(&J_1);
-	Task J_2("J_2", 0, 720, true, "L_2.txt");
-	J.push_back(&J_2);
-	Task J_3("J_3", 60, 420, false, "L_3.txt");
-	J.push_back(&J_3);*/
-
-//	// Task set for case_study_120_min
-//	Task J_1("J_1", 10, 100, false, "L_1.txt");
-//	J.push_back(&J_1);
-//	Task J_2("J_2", 0, 120, true, "L_2.txt");
-//	J.push_back(&J_2);
-//	Task J_3("J_3", 40, 110, false, "L_3.txt");
-//	J.push_back(&J_3);
-
-    //Task set for case_study_72_slots
-    Task J_1("J_1", 0, 70, false, "L_1.txt");
-    J.push_back(&J_1);
-    Task J_2("J_2", 5, 72, true, "L_2.txt");
-    J.push_back(&J_2);
-    Task J_3("J_3", 15, 72, false, "L_3.txt");
-    J.push_back(&J_3);
-    Task J_4("J_4", 22, 69, false, "L_4.txt");
-    J.push_back(&J_4);
-    Task J_5("J_5", 20, 70, true, "L_5.txt");
-    J.push_back(&J_5);
-
-//  //Task set for case_study_T20_min
-//  Task J_1("J_1", 3, 20, false, "L_1.txt");
-//  J.push_back(&J_1);
-//  Task J_2("J_2", 0, 21, true, "L_2.txt");
-//  J.push_back(&J_2);
-//  Task J_3("J_3", 2, 18, false, "L_3.txt");
-//  J.push_back(&J_3);
 
 	//>>>>>>>>>>>>>>Sorting Tasks<<<<<<<<<<<<<<<<<//
 	//TODO:sorting
@@ -180,16 +57,19 @@ int main()
 
 // 	check their validity
 // 	TODO: put into the paper as a weak admittance test
-	int max_d_i = checkTasksValidity(J, P_max);
+//	int max_d_i = checkTasksValidity(J, P_max);
 
-	//clock_t t1, t2, t3;
-	//t1 = clock();
-//	for (int i=0; i<1000; i++) {
+  
+  //vector<Signal<int>*>* minTab = new vector<Signal<int>*>();
+  //double minCost = numeric_limits<double>::max();
+  //double peakValue = numeric_limits<double>::max();
 
-		vector<Signal<int>*> emptyTab;
-		//vector<Signal<int>*>* minTab = new vector<Signal<int>*>();
-		//double minCost = numeric_limits<double>::max();
-		//double peakValue = numeric_limits<double>::max();
+  // Read problem
+  SchedulingProblemReader* spr = new SchedulingProblemReader();
+  SchedulingProblem* sp = NULL;
+  sp = spr->read();
+  //sp->print();
+
 
 //===============================================================================================
 //>>>>>>>>>>>>>>>>>> Our heuristic <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -213,7 +93,9 @@ int main()
 
         TNondominatedSet* pNondominatedSet = new TListSet < SchedulingMOMHSolution >;
 //      MOS(J, emptyTab, pNondominatedSet, P_max, p_min, P_H);
-        allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, J, emptyTab, pNondominatedSet, P_max, p_min, P_H );
+	vector<Signal<int>*> emptyTab;
+	sp->setPMax( sp->PMaxHigh() );
+        allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 
         for(std::vector<TSolution*>::iterator it=pNondominatedSet->begin(); it != pNondominatedSet->end(); it++)
         {
@@ -229,8 +111,6 @@ int main()
 
         delete pNondominatedSet;
 
-//      t2 = clock();
-//      for (int i=0; i<1000; i++) {
 
 //        cout << "Minimum cost is " << minCost << endl;
 //        cout << "Peak Value of Minimum Costed P_tot is " << peakValue << endl;

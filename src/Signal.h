@@ -29,7 +29,7 @@ public:
   int size();
   double getEnergy();
   void setValueAt(int, T);
-
+  double peak();
 
   void readFromFile(string);
   void print();
@@ -171,6 +171,16 @@ template <typename T>
 void Signal<T>::setValueAt(int i, T val)
 {
   _value[i] = val;
+}
+
+template <typename T>
+double Signal<T>::peak()
+{
+  T max = 0;
+  for(int i=0; i<size(); i++)
+    if(_value[i] > max)
+      max = _value[i];
+  return max;
 }
 
 // reads a file with time-value pairs into an array
