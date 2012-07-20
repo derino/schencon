@@ -30,7 +30,7 @@ AC_ARG_WITH([cplex-path],
   [CPLEXBASEDIR='/opt/ibm/ILOG/CPLEX_Studio124'])
 AC_SUBST([CPLEXBASEDIR])
 # Should we use 64bit CPLEX libraries?
-AC_ARG_WITH([cplex],
+AC_ARG_WITH([32bit-cplex],
   [AS_HELP_STRING([--with-32bit-cplex],
     [use 32bit CPLEX system, defaults to 64bit CPLEX])],
   [BIT64=false],

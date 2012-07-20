@@ -52,16 +52,21 @@ class SchedulingProblem
   void write(/*string filename*/);
   void print();
 
+  int N();
   void setN(int); // #tasks
+  int L();
+  void setL(int); // scheduling length
   void setLPAR(double);
   void setPrR(double);
   void setPMin(Signal<double>*);
+  double PMax();
   void setPMax(double);
   vector<Task*>* J();
 
 
  protected:
   int _N;
+  int _L;
   double _LPAR;
   double _PrR;
   double _PMax;

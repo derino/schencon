@@ -41,6 +41,7 @@ ilpsec_SOURCES = ILPScheduler.cpp \
 		 SchedulingProblemReader.cpp \
 		 SchedulingSolution.h \
 		 SchedulingSolution.cpp \
+		 InfeasibleSolutionException.h \
 		 Task.h \
 		 Task.cpp \
 		 Signal.h
