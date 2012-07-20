@@ -190,7 +190,15 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
       // define constraints
       // 1- respect Pmax
       IloRangeArray PMaxCons(env);
-      PMaxConstraints (sp, model, x, PMaxCons);
+      PMaxConstraints(sp, model, x, PMaxCons);
+
+      // 2- t variables
+      IloRangeArray tCons(env);
+      tConstraints(sp, model, x, t, tCons);
+
+      // 3- respect arrivals
+      IloRangeArray arrivalCons(env);
+      arrivalConstraints (sp, model, x, t, arrivalCons);
 
 //      // 2- task mapping
 //      IloRangeArray taskMappingCons(env);
@@ -242,8 +250,8 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
 // 	 cerr << "Invalid use of the map() method!" << endl;
 // 	 throw(-1);
 //        }
-//      // May CPLEX solve the problem!
-//      ms = optimize(mp, model, x, y, Tn, routingCons, taskMappingCons,taskMovingCons, communicationMappingCons, capacityCons, objectiveCons);
+      // May CPLEX solve the problem!
+      ss = optimize(sp, model, x, t, PMaxCons, tCons, arrivalCons);
     }
     catch (IloException& e) {
       cerr << "Concert exception caught: " << e << endl;
@@ -266,51 +274,51 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
 }
 
 
-// // Spend at least timeLimit sec. on optimization, but once
-// // this limit is reached, quit as soon as the solution is acceptable
+// Spend at least timeLimit sec. on optimization, but once
+// this limit is reached, quit as soon as the solution is acceptable
 
-// ILOMIPINFOCALLBACK5(timeLimitCallback,
-//                     IloCplex, cplex,
-//                     IloBool,  aborted,
-//                     IloNum,   timeStart,
-//                     IloNum,   timeLimit,
-//                     IloNum,   acceptableGap)
-// {
-//    if ( !aborted  &&  hasIncumbent() ) {
-//       IloNum gap = 100.0 * getMIPRelativeGap();
-//       IloNum timeUsed = cplex.getCplexTime() - timeStart;
-// //      if ( timeUsed > 1 )  printf ("time used = %g\n", timeUsed);
-//       if ( timeUsed > timeLimit && gap < acceptableGap ) {
-//          getEnv().out() << endl
-//                         << "Good enough solution at "
-//                         << timeUsed << " sec., gap = "
-//                         << gap << "%, aborting." << endl;
-//          aborted = IloTrue;
-//          abort();
-//       }
-//    }
-// }
+ILOMIPINFOCALLBACK5(timeLimitCallback,
+                    IloCplex, cplex,
+                    IloBool,  aborted,
+                    IloNum,   timeStart,
+                    IloNum,   timeLimit,
+                    IloNum,   acceptableGap)
+{
+   if ( !aborted  &&  hasIncumbent() ) {
+      IloNum gap = 100.0 * getMIPRelativeGap();
+      IloNum timeUsed = cplex.getCplexTime() - timeStart;
+//      if ( timeUsed > 1 )  printf ("time used = %g\n", timeUsed);
+      if ( timeUsed > timeLimit && gap < acceptableGap ) {
+         getEnv().out() << endl
+                        << "Good enough solution at "
+                        << timeUsed << " sec., gap = "
+                        << gap << "%, aborting." << endl;
+         aborted = IloTrue;
+         abort();
+      }
+   }
+}
 
-// MappingSolution*
-// ILPScheduler::optimize(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloBoolVarArray y, IloNumVarArray Tn, IloRangeArray routingCons, IloRangeArray taskMappingCons,IloRangeArray taskMovingCons, IloRangeArray communicationMappingCons, IloRangeArray capacityCons, IloRangeArray objectiveCons)
-// {
-//   MappingSolution* ms = new MappingSolution(mp);
-//   IloEnv env = model.getEnv();
+SchedulingSolution*
+ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons,IloRangeArray arrivalCons/*, IloRangeArray communicationMappingCons, IloRangeArray capacityCons, IloRangeArray objectiveCons*/)
+{
+  SchedulingSolution* ss = NULL; //new MappingSolution(mp);
+  IloEnv env = model.getEnv();
 
-//   // Optimize the problem and obtain solution.
-//   IloCplex cplex(model);
+  // Optimize the problem and obtain solution.
+  IloCplex cplex(model);
   
-//   cplex.exportModel("lpex1.lp");
+  cplex.exportModel("problem.lp");
   
-//   // Turn off CPLEX logging
-//   cplex.setParam(IloCplex::MIPDisplay, 0);
+  // Turn off CPLEX logging
+  cplex.setParam(IloCplex::MIPDisplay, 0);
 
-//   // if timeLimit is set then register the time limit callback
-//   if ( timeLimit != -1 ) {
-//          cplex.use(timeLimitCallback(env, cplex, IloFalse, cplex.getCplexTime(), timeLimit/*1.0*/, gapLimit/*10.0*/));
-//       }
+  // if timeLimit is set then register the time limit callback
+  if ( timeLimit != -1 ) {
+    cplex.use(timeLimitCallback(env, cplex, IloFalse, cplex.getCplexTime(), timeLimit/*1.0*/, gapLimit/*10.0*/));
+  }
 
-//   //cplex.resetTime();
+  //cplex.resetTime();
 //   if ( !cplex.solve() ) 
 //     {
 //       env.error() << "Failed to optimize LP" << endl;
@@ -395,8 +403,18 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
 //   // cplex.getReducedCosts(vals, y);
 //   // env.out() << "Reduced Costs = " << vals << endl;
 
-//   return ms;
-// }
+  return ss;
+}
+
+// returns the total number of job pieces of jobs until n-th job,
+// i.e., excluding n
+int ILPScheduler::sumM(int n)
+{
+  int sum = 0;
+  for(int i=0; i<n-1; i++)
+    sum += sp->J()->at(i)->getL()->size();
+  return sum;
+}
 
 // // To populate by nonzero, we first create the rows, then create the
 // // columns, and then change the nonzeros of the matrix 1 at a time.
@@ -417,7 +435,7 @@ ILPScheduler::PMaxConstraints (SchedulingProblem* sp, IloModel model, IloBoolVar
 	  int M = sp->J()->at(n)->getL()->size();
 	  for(int m = 0; m < M; m++)
 	    {
-	      int nml = n*(M*sp->L()) + m*sp->L() + l;
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
 	      double l_nm = sp->J()->at(n)->getL()->at(m);
 	      c[l].setLinearCoef(x[nml], l_nm);
 	    } // end m
@@ -427,6 +445,50 @@ ILPScheduler::PMaxConstraints (SchedulingProblem* sp, IloModel model, IloBoolVar
   model.add(c);
 
 }  // END PMaxConstraints
+
+void
+ILPScheduler::tConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
+
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for (int m = 0; m < M; m++)
+	{
+	  c.add( IloRange(env, 0.0, 0.0) );
+	  std::stringstream nm_str;
+	  nm_str << sumM(n)+m+1;
+	  c[sumM(n)+m].setName( ("t_c(" + nm_str.str() + ")").c_str() );
+
+	  for (int l = 1; l <= sp->L(); l++)
+	    {
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
+	      c[sumM(n)+m].setLinearCoef(x[nml], l);
+	    } // end l
+	} // end m
+    } // end n
+
+  model.add(c);
+} // END tConstraints
+
+void
+ILPScheduler::arrivalConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
+
+  for(int n=0; n < sp->N(); n++)
+    {
+      c.add( IloRange(env, sp->J()->at(n)->getA(), IloInfinity) );
+      std::stringstream n_str;
+      n_str << n+1;
+      c[n].setName( ("arr_c(" + n_str.str() + ")").c_str() );
+
+      c[n].setLinearCoef(t[sumM(n)+1], 1.0);
+    }
+
+  model.add(c);
+} // END arrivalConstraints
 
 // void 
 // ILPScheduler::taskMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c)

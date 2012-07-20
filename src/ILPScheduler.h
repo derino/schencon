@@ -82,12 +82,16 @@ class ILPScheduler
 
 
  protected:
+  int sumM(int n);
   void PMaxConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray PMaxCons);
+
+  void tConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c);
+
+  void arrivalConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c);
 
 //  void taskMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
 
 //  void faultyCoreConstraints (MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
-
 //  void taskMovingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
 
 //  void communicationMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c);
@@ -102,7 +106,8 @@ class ILPScheduler
 
 //  void commObjectiveAsConstraint (RelationType rType, double commConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c);
 
-//  MappingSolution* optimize(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloBoolVarArray y, IloNumVarArray Tn, IloRangeArray routingCons, IloRangeArray taskMappingCons, IloRangeArray taskMovingCons, IloRangeArray communicationMappingCons, IloRangeArray capacityCons, IloRangeArray objectiveCons);
+SchedulingSolution* optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons,IloRangeArray arrivalCons);
+
 };
 
 #endif
