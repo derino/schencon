@@ -78,6 +78,7 @@ string SchedulingProblem::name()
 
 void SchedulingProblem::print()
 {
+
   // print problem name
   cout << name() << endl;
 
@@ -102,8 +103,10 @@ void SchedulingProblem::write()
   // write problem.txt file.
   ofstream fout1("problem.txt");
   //ofstream fout1( (filename+".txt").c_str() );
-
-  fout1 << _N << endl;
+  
+  fout1 << "TaskSet Size:\t" << _N << endl
+    	<< "Low Par Ration:\t" << _LPAR << endl
+  	<< "Preemptive Ratio:\t" << _PrR << endl;
   // 	<< E() << endl
   // 	<< endl;
   fout1.close();
