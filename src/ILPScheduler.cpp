@@ -49,15 +49,6 @@ ILPScheduler::~ILPScheduler()
   
 }
 
-SchedulingSolution*
-ILPScheduler::schedule(GoalType gType, ObjectiveType oType)
-{
-  SchedulingSolution* ss = new SchedulingSolution();
-  //  return schedule(gType, oType, NONE, 0.0);
-  return ss;
-}
-
-
 
 /** J.-F. Berube et al. / European Journal of Operational Research 194 (2009) 39–50 
     An exact epsilon-constraint method for bi-objective combinatorial optimization problems:
@@ -133,33 +124,40 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType)
 //   */
 // }
 
-// MappingSolution*
-// ILPScheduler::map(GoalType gType, ObjectiveType oType)
-// {
-//   return map(gType, oType, NONE, 0.0);
-// }
+SchedulingSolution*
+ILPScheduler::schedule(GoalType gType, ObjectiveType oType)
+{
+  return schedule(gType, oType, NONE, 0.0);
+}
 
-// MappingSolution*
-// ILPScheduler::map(GoalType gType, ObjectiveType oType, RelationType rType, double thresholdConstraint)
-// {
-//   MappingSolution* ms = NULL;
+SchedulingSolution*
+ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, double thresholdConstraint)
+{
+   SchedulingSolution* ss = NULL;
 
-//    IloEnv env;
-//    try {
-//      // the ILP model
-//      IloModel model(env);
+    IloEnv env;
+    try {
+      // the ILP model
+      IloModel model(env);
      
-//      // define task mapping decision variables
-//      IloBoolVarArray x(env);
-//      for(int i=1; i<=mp->N(); i++)
-//        for(int j=1; j<=mp->T(); j++)
-// 	 {
-// 	   x.add(IloBoolVar(env));
-// 	   std::stringstream i_str, j_str;
-// 	   i_str << i;
-// 	   j_str << j;
-// 	   x[(i-1)*mp->T()+j-1].setName( ("Xnt("+ i_str.str() + "," + j_str.str() + ")").c_str() );
-// 	 }
+      // define scheduling decision variables
+      IloBoolVarArray x(env);
+      for(int n=1; n<=sp->N(); n++)
+	{
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m=1; m<=M; m++)
+	    {
+	      for(int l=1; l<=sp->L(); l++)
+		{
+		  x.add(IloBoolVar(env));
+		  std::stringstream n_str, m_str, l_str;
+		  n_str << n;
+		  m_str << m;
+		  l_str << l;
+		  x[(n-1)*M*sp->L()+(m-1)*sp->L()+(l-1)].setName( ("x_nml("+ n_str.str() + "," + m_str.str() + "," + l_str.str() + ")").c_str() );
+		}
+	    }
+	}
 
 //      // define communication mapping decision variables
 //      IloBoolVarArray y(env);
@@ -173,23 +171,26 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType)
 // 	   y[(i-1)*mp->E()+(j-1)].setName( ("Ype("+ i_str.str() + "," + j_str.str() + ")").c_str() );
 // 	 }
 
-//      // define Tn decision variables only if it is not the case of single communication objective
-//      IloNumVarArray Tn(env);
-//      if( !(rType == NONE && oType == COMMUNICATION) )
-//        {
-// 	 for(int i=1; i<=mp->N(); i++)
-// 	   {
-// 	     Tn.add(IloNumVar(env));
-// 	     std::stringstream i_str;
-// 	     i_str << i;
-// 	     Tn[i-1].setName( ("Tn("+ i_str.str() + ")").c_str() );
-// 	   }
-//        }
+      // define t decision variables
+      IloNumVarArray t(env);
+      for(int n=1; n<=sp->N(); n++)
+	{
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m=1; m<=M; m++)
+	    {
+	      t.add(IloNumVar(env));
+	      std::stringstream n_str;
+	      std::stringstream m_str;
+	      n_str << n;
+	      m_str << m;
+	      t[(n-1)*M+(m-1)].setName( ("t("+ n_str.str() + "," + m_str.str() + ")").c_str() );
+	    }
+        }
      
-//      // define constraints
-//      // 1- routing
-//      IloRangeArray routingCons(env);
-//      routingConstraints (mp, model, x, y, routingCons);
+      // define constraints
+      // 1- respect Pmax
+      IloRangeArray PMaxCons(env);
+      PMaxConstraints (sp, model, x, PMaxCons);
 
 //      // 2- task mapping
 //      IloRangeArray taskMappingCons(env);
@@ -243,26 +244,26 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType)
 //        }
 //      // May CPLEX solve the problem!
 //      ms = optimize(mp, model, x, y, Tn, routingCons, taskMappingCons,taskMovingCons, communicationMappingCons, capacityCons, objectiveCons);
-//    }
-//    catch (IloException& e) {
-//      cerr << "Concert exception caught: " << e << endl;
+    }
+    catch (IloException& e) {
+      cerr << "Concert exception caught: " << e << endl;
 //      ms = new MappingSolution(mp);
 //      ms->setStatus(ERROR_SOLUTION/*IloAlgorithm::Error*/);
-//    }
-//    catch (InfeasibleSolutionException& ise)
-//      {
+    }
+    catch (InfeasibleSolutionException& ise) {
+	cerr << "TODO" << endl;
 //        ms = ise.getMappingSolution();
-//      }
-//    catch (...) {
-//      cerr << "Unknown exception caught" << endl;
+      }
+    catch (...) {
+      cerr << "Unknown exception caught" << endl;
 //      ms = new MappingSolution(mp);
 //      ms->setStatus(ERROR_SOLUTION/*IloAlgorithm::Error*/);
-//    }
+    }
+    
+    env.end();
    
-//    env.end();
-   
-//    return ms;
-// }
+    return ss;
+}
 
 
 // // Spend at least timeLimit sec. on optimization, but once
@@ -399,71 +400,33 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType)
 
 // // To populate by nonzero, we first create the rows, then create the
 // // columns, and then change the nonzeros of the matrix 1 at a time.
-// void
-// ILPScheduler::routingConstraints (MappingProblem* mp, IloModel model, IloBoolVarArray x, IloBoolVarArray y, IloRangeArray c)
-// {
-//   IloEnv env = model.getEnv();
-//   // for(int i = 0; i<mp->N()*mp->E(); i++)
-//   //   {
-//   //     c.add(IloRange(env, 0.0, 0.0));
-//   //     std::stringstream i_str;
-//   //     i_str << i+1;
-//   //     c[i].setName( ("routing_c" + i_str.str()).c_str() );
-//   //   }
-  
-//   //int count=0;
-  
-//   //FILE *file;
-  
-//   //file = fopen("autocodegeneration.txt","a+"); /* apend file (add text to
-//   //						  a file or create a file if it does not exist.*/
-//   //fprintf(file,"Subject To\n\n");
-//   //fprintf(file,"\\Constraint 1\n\n");
-//   for(int i=0; i<mp->N();i++){
-//     for(int k=0;k<mp->E();k++)
-//       {
-// 	c.add(IloRange(env, 0.0, 0.0));
-// 	std::stringstream i_str;
-// 	std::stringstream k_str;
-// 	//	ik_str << i*mp->E()+k+1;
-// 	i_str << i+1;
-// 	k_str << k+1;
-// 	c[i*mp->E()+k].setName( ("routing_c(" + i_str.str() + "," + k_str.str() + ")").c_str() );
-// 	//fprintf(file,"c%d:",k+1+ i*mp->E());
-// 	for(int j=0; j<mp->T();j++){
-	  
-// 	  if(mp->Mte()[j][k] != 0)
-// 	    {
-// 	      if(mp->Mte()[j][k]== 1)
-// 		c[k+i*mp->E()].setLinearCoef(x[j+i*mp->T()], 1.0);
-// 	      //fprintf(file," - x%d",j+count*mp->T()+1);
-// 	      else
-// 		c[k+i*mp->E()].setLinearCoef(x[j+i*mp->T()], -1.0);
-// 	      //fprintf(file," + x%d",j+count*mp->T()+1);
-// 	    };
-// 	};
-// 	for(int m=0; m<mp->P() ; m++)
-// 	  {
-// 	    if(mp->Mpn()[m][i] != 0)
-// 	      {
-// 		if(mp->Mpn()[m][i] == 1)
-// 		  c[k+i*mp->E()].setLinearCoef(y[m*mp->E()+k], -1.0); // note the signs. it's opposite sign because it's subracted (see the constraint eqn.)
-// 		//fprintf(file," + y%d",m*mp->E()+1+k);
-// 		else
-// 		  c[k+i*mp->E()].setLinearCoef(y[m*mp->E()+k], 1.0);
-// 		//fprintf(file," - y%d",m*mp->E()+1+k);
-// 	      };
-// 	  };
-// 	//fprintf(file," = 0");
-// 	//fprintf(file,"\n");
-//       }; // eof k<E
-//     //count++;
-//   };
-    
-//   //fclose(file); /*done!*/  
-//   model.add(c);
+void
+ILPScheduler::PMaxConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
 
-// }  // END routingConstraint
+  for(int l=0; l < sp->L(); l++)
+    {
+      c.add( IloRange(env, -IloInfinity, sp->PMax()) );
+      std::stringstream l_str;
+      l_str << l+1;
+      c[l].setName( ("PMax_c(" + l_str.str() + ")").c_str() );
+
+      for(int n=0; n < sp->N(); n++)
+	{
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m = 0; m < M; m++)
+	    {
+	      int nml = n*(M*sp->L()) + m*sp->L() + l;
+	      double l_nm = sp->J()->at(n)->getL()->at(m);
+	      c[l].setLinearCoef(x[nml], l_nm);
+	    } // end m
+	} // end n
+    } // end l
+    
+  model.add(c);
+
+}  // END PMaxConstraints
 
 // void 
 // ILPScheduler::taskMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c)

@@ -32,60 +32,27 @@
   * Author(s): Onur Derin <oderin@users.sourceforge.net>
   * 
   */
-#include "SchedulingProblemReader.h"
+#ifndef INFEASIBLESOLUTIONEXCEPTION_H
+#define INFEASIBLESOLUTIONEXCEPTION_H
 
-SchedulingProblemReader::SchedulingProblemReader()
-{
-}
+#include <exception>
 
-SchedulingProblemReader::~SchedulingProblemReader()
-{
-}
+#include "SchedulingSolution.h"
 
-SchedulingProblem* SchedulingProblemReader::read()
-{
-  SchedulingProblem* sp = new SchedulingProblem();
+class InfeasibleSolutionException : public std::exception
+{ 
+ private:
+  SchedulingSolution* ss;
 
-  // read problem.txt
-  ifstream fin("problem.txt");
-  if ( !fin.is_open())
-    {
-      cout << "Unable to open file problem.txt" << endl; 
-      exit(EXIT_FAILURE);
-    }
-  // - read N (number of tasks)
-  int N = -1;
-  fin >> N;
-  sp->setN(N);
-  // - read L (schedule length)
-  int L = -1;
-  fin >> L;
-  sp->setL(L);
-  fin.close();
+public:
+  InfeasibleSolutionException(SchedulingSolution* _ss) 
+    : exception(), ss(_ss)
+  { }
+  
+  SchedulingSolution* getSchedulingSolution()
+  {
+    return ss;
+  }
+};
 
-  // read P_max.txt
-  ifstream fin2("P_max.txt");
-  if ( !fin2.is_open())
-    {
-      cout << "Unable to open file P_max.txt" << endl; 
-      exit(EXIT_FAILURE);
-    }
-  double PMax = -1;
-  fin2 >> PMax;
-  sp->setPMax(PMax);
-  fin2.close();
-
-  // read price signal
-  Signal<double>* pMin = new Signal<double>("p_min", "p_min.txt");
-  sp->setPMin(pMin);
-
-  // Task set for case_study_T20_min
-  for(int i=1; i<N+1; i++)
-    {
-      Task* t = new Task(i); // assumes the presence of a task file with name, for ex,  J1.txt for i=1
-      sp->J()->push_back(t);
-    }
-
-  return sp;
-}
-
+#endif

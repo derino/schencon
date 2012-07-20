@@ -43,14 +43,34 @@ void SchedulingProblem::setPMin(Signal<double>* pMin)
   _pMin = pMin;
 }
 
+double SchedulingProblem::PMax()
+{
+  return _PMax;
+}
+
 void SchedulingProblem::setPMax(double PMax)
 {
   _PMax = PMax;
 }
 
+int SchedulingProblem::N()
+{
+  return _N;
+}
+
 void SchedulingProblem::setN(int N)
 {
   _N = N;
+}
+
+int SchedulingProblem::L()
+{
+  return _L;
+}
+
+void SchedulingProblem::setL(int L)
+{
+  _L = L;
 }
 
 void SchedulingProblem::setLPAR(double lpar)

@@ -41,6 +41,7 @@
 
 #include "SchedulingProblem.h"
 #include "SchedulingSolution.h"
+#include "InfeasibleSolutionException.h"
 
 ILOSTLBEGIN
 
@@ -62,7 +63,7 @@ class ILPScheduler
   SchedulingSolution* schedule(GoalType gType, ObjectiveType oType);
 
   // multi objective
-//  MappingSolution* map(GoalType gType, ObjectiveType oType, RelationType rType, double thresholdConstraint);
+  SchedulingSolution* schedule(GoalType gType, ObjectiveType oType, RelationType rType, double thresholdConstraint);
   // solves the multi-objective problem
 //  MappingSolutionSet* epsilonConstraintMethod(double delta);
 
@@ -81,7 +82,7 @@ class ILPScheduler
 
 
  protected:
-//  void routingConstraints(MappingProblem* p, IloModel model, IloBoolVarArray x, IloBoolVarArray y, IloRangeArray con);
+  void PMaxConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray PMaxCons);
 
 //  void taskMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
 
