@@ -60,6 +60,10 @@ problemcreator_SOURCES = ProblemCreatorMain.cpp \
 problemcreator_LDADD   = 
 
 heursec_SOURCES = HeuristicsBasedSchedulerMain.cpp \
+		  SchedulingProblem.h \
+		  SchedulingProblem.cpp \
+		  SchedulingProblemReader.h \
+		  SchedulingProblemReader.cpp \
 		  MOS.h \
 		  SchedulingMOMHSolution.hpp \
 		  SchedulingMOMHSolution.cpp \

@@ -59,8 +59,15 @@ class SchedulingProblem
   void setLPAR(double);
   void setPrR(double);
   void setPMin(Signal<double>*);
+  Signal<double>* pMin();
+  Signal<double>* PH();
+  void setPH();
   double PMax();
+  double PMaxLow();
+  double PMaxMedium();
+  double PMaxHigh();
   void setPMax(double);
+  void setPMaxRange(double, double, double);
   vector<Task*>* J();
 
 
@@ -70,7 +77,11 @@ class SchedulingProblem
   double _LPAR;
   double _PrR;
   double _PMax;
+  double _PMaxLow;
+  double _PMaxMedium;
+  double _PMaxHigh;
   Signal<double>* _pMin;
+  Signal<double>* _PH;
   vector<Task*> _J;
 
 };

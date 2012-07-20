@@ -6,10 +6,12 @@
 #include <limits>
 #include <sstream>
 #include <math.h>
+#include <sys/stat.h>
 //#include <boost/lambda/lambda.hpp>
 
 #include "Signal.h"
 #include "Task.h"
+#include "util.h"
 #include "SchedulingProblem.h"
 using namespace std;
 //using namespace boost::lambda;
@@ -24,6 +26,25 @@ int L = 96;
 float rand01()
 {
   return ((float) rand()) / RAND_MAX;
+}
+
+Signal<double>* createPMin()
+{
+  // configuration for p_min duration = schedule lengt, # of period repeats = 1
+  int tp = L;
+  int R = 1;
+  double  aS = 0.17;
+  double  bS = 0.02;  
+  Signal<double>* pMin = new Signal<double>("p_min", tp*R, 0);
+  
+  for( int n=0; n<tp*R; n++)
+  {
+    // calculate value at n
+    double val = aS + bS * sin ((2 * M_PI * n / tp)+M_PI);
+    pMin->setValueAt(n, val);
+  }
+
+  return pMin;
 }
 
 Task* createTask(int i, bool preemptable, float par)
@@ -75,6 +96,20 @@ Task* createTask(int i, bool preemptable, float par)
   return j;
 }
 
+void calculatePMaxRange(vector<Task*>* J, double& Pmax_low, double& Pmax_med, double& Pmax_high)
+{
+  double* peaks = new double[J->size()];
+
+  Pmax_high = 0;
+  for(int i=0; i<J->size(); i++)
+    {
+      peaks[i] = J->at(i)->getL()->peak();
+      Pmax_high += peaks[i];
+    }
+  Pmax_low = max(peaks, J->size());
+  Pmax_med = (Pmax_high + Pmax_low)/2;
+}
+
 
 int main()
 {
@@ -112,8 +147,13 @@ int main()
 	  sp->setLPAR( lpar_arr[b] );
 	  sp->setN(tss);
 	  sp->setL(L);
+	  sp->setPH();
 
-	  for (int i = 0; i < tss; i++)
+	   // creating p_min signal
+	  Signal<double>* pMin = createPMin();
+  	  sp->setPMin(pMin);
+	  
+	  for (int i = 1; i <= tss; i++)
 	    {
 	      float r = rand01();
 	      if(r < prr_arr[a])
@@ -131,14 +171,24 @@ int main()
 	      sp->J()->push_back(j_i);
 
 	    }
-	  //      TODO:Problem ismine uygun folder olusturup, bir onceki loopta olusan taski icine at
+	  
+	  // calculate p_max range
+	  // calculate Pmax_low, Pmax_med, Pmax_high
+	  double Pmax_low, Pmax_med, Pmax_high;
+	  calculatePMaxRange(sp->J(), Pmax_low, Pmax_med, Pmax_high);
+	  sp->setPMaxRange(Pmax_low, Pmax_med, Pmax_high);
+	  	  
 	  // create problem folder
+	  mkdir(sp->name().c_str(), S_IRWXU | S_IRWXG);
 	  // change curr. dir. to the problem folder
-	  // write problem files
+	  chdir(sp->name().c_str());
+	  // write problem files	  
 	  sp->write();
-
+	  // change curr. dir. back to top
+	  chdir("..");
 	}
     }
+  
   return 0;
   //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Syntetic Task Set Creater<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
