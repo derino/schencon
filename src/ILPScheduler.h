@@ -89,24 +89,25 @@ class ILPScheduler
 
   void arrivalConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c);
 
-//  void taskMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
+  void deadlineConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c);
 
-//  void faultyCoreConstraints (MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
-//  void taskMovingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c);
+  void scheduledOnceConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray scheduledOnceCons);  
 
-//  void communicationMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c);
+  void precedenceConstraints (SchedulingProblem* sp, IloModel model, IloNumVarArray t, IloRangeArray c);
 
-//  void capacityConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c);
+  int sumMofNonPr(int n);
+  int sumOfNonPr(int n);
+  void nonpreamptableConstraints (SchedulingProblem* sp, IloModel model, IloNumVarArray t, IloRangeArray c);
 
-//  void compObjective (GoalType gType, MappingProblem* mp, IloModel model, IloBoolVarArray x, IloNumVarArray Tn);
+  void costObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x);
 
 //  void compObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double compConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray x, IloNumVarArray Tn, IloRangeArray c);
 
-//  void commObjective (GoalType gType, MappingProblem* mp, IloModel model, IloBoolVarArray y);
+  void peakObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x);
 
 //  void commObjectiveAsConstraint (RelationType rType, double commConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c);
 
-SchedulingSolution* optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons,IloRangeArray arrivalCons);
+  SchedulingSolution* optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons, IloRangeArray arrivalCons, IloRangeArray deadlineCons, IloRangeArray scheduledOnceCons, IloRangeArray precedenceCons, IloRangeArray nonpreamptableCons, IloRangeArray objectiveCons);
 
 };
 

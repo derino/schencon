@@ -142,48 +142,40 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
      
       // define scheduling decision variables
       IloBoolVarArray x(env);
-      for(int n=1; n<=sp->N(); n++)
+      //      int z = 0;
+      for(int n=0; n<sp->N(); n++)
 	{
 	  int M = sp->J()->at(n)->getL()->size();
-	  for(int m=1; m<=M; m++)
+	  //	  cout << ">>>>>> M:" << M << endl;
+	  for(int m=0; m<M; m++)
 	    {
-	      for(int l=1; l<=sp->L(); l++)
+	      for(int l=0; l<sp->L(); l++)
 		{
 		  x.add(IloBoolVar(env));
 		  std::stringstream n_str, m_str, l_str;
-		  n_str << n;
-		  m_str << m;
-		  l_str << l;
-		  x[(n-1)*M*sp->L()+(m-1)*sp->L()+(l-1)].setName( ("x_nml("+ n_str.str() + "," + m_str.str() + "," + l_str.str() + ")").c_str() );
-		}
-	    }
-	}
-
-//      // define communication mapping decision variables
-//      IloBoolVarArray y(env);
-//      for(int i=1; i<=mp->P(); i++)
-//        for(int j=1; j<=mp->E(); j++)
-// 	 {
-// 	   y.add(IloBoolVar(env));
-// 	   std::stringstream i_str, j_str;
-// 	   i_str << i;
-// 	   j_str << j;
-// 	   y[(i-1)*mp->E()+(j-1)].setName( ("Ype("+ i_str.str() + "," + j_str.str() + ")").c_str() );
-// 	 }
+		  n_str << n+1;
+		  m_str << m+1;
+		  l_str << l+1;
+		  //		  cout << z << ": " << sumM(n)*sp->L()+m*sp->L()+l << endl;
+		  //		  z++;
+		  x[sumM(n)*sp->L()+m*sp->L()+l].setName( ("x_nml("+ n_str.str() + "," + m_str.str() + "," + l_str.str() + ")").c_str() );
+		} // end l
+	    } // end m
+	} // end n
 
       // define t decision variables
       IloNumVarArray t(env);
-      for(int n=1; n<=sp->N(); n++)
+      for(int n=0; n<sp->N(); n++)
 	{
 	  int M = sp->J()->at(n)->getL()->size();
-	  for(int m=1; m<=M; m++)
+	  for(int m=0; m<M; m++)
 	    {
 	      t.add(IloNumVar(env));
 	      std::stringstream n_str;
 	      std::stringstream m_str;
-	      n_str << n;
-	      m_str << m;
-	      t[(n-1)*M+(m-1)].setName( ("t("+ n_str.str() + "," + m_str.str() + ")").c_str() );
+	      n_str << n+1;
+	      m_str << m+1;
+	      t[sumM(n)+m].setName( ("t("+ n_str.str() + "," + m_str.str() + ")").c_str() );
 	    }
         }
      
@@ -198,39 +190,33 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
 
       // 3- respect arrivals
       IloRangeArray arrivalCons(env);
-      arrivalConstraints (sp, model, x, t, arrivalCons);
+      arrivalConstraints(sp, model, x, t, arrivalCons);
 
-//      // 2- task mapping
-//      IloRangeArray taskMappingCons(env);
-//      taskMappingConstraints (mp, model, x, taskMappingCons);
-     
-//      // 2.1- faulty core (only if it's a remapping problem)
-//      IloRangeArray faultyCoreCons(env);
-//      if( /*rmpt*/ mp->mpType == LIMITED_REMAPPING_PROBLEM || /*rmpt*/ mp->mpType == UNLIMITED_REMAPPING_PROBLEM)
-//        faultyCoreConstraints (mp, model, x, faultyCoreCons);
+      // 4- respect deadlines
+      IloRangeArray deadlineCons(env);
+      deadlineConstraints(sp, model, x, t, deadlineCons);
 
-//      // 2.2- limited reconfiguration
-//      IloRangeArray taskMovingCons(env);
-//      if( /*rmpt*/mp->mpType == LIMITED_REMAPPING_PROBLEM )
-//        taskMovingConstraints (mp, model, x, taskMovingCons);
+      // 5- schedule each job piece once
+      IloRangeArray scheduledOnceCons(env);
+      scheduledOnceConstraints(sp, model, x, scheduledOnceCons);
 
-//      // 3- communication mapping
-//      IloRangeArray communicationMappingCons(env);
-//      communicationMappingConstraints (mp, model, y, communicationMappingCons);
+      // 6- job piece dependencies
+      IloRangeArray precedenceCons(env);
+      precedenceConstraints(sp, model, t, precedenceCons);
 
-//      // 4- capacity
-//      IloRangeArray capacityCons(env);
-//      capacityConstraints (mp, model, y, capacityCons);
+      // 7- nonpreamptable job
+      IloRangeArray nonpreamptableCons(env);
+      nonpreamptableConstraints(sp, model, t, nonpreamptableCons);
 
-//      // 5- oType as objective, other as constraint. 
-//      //    if rType is NONE, then it is a single objective problem.
-//      IloRangeArray objectiveCons(env); //IloRangeArray computationCons(env);
-//      if (rType == NONE && oType == COMMUNICATION) // single comm. objective
-// 	 // define communication cost as the objective
-// 	 commObjective(gType, mp, model, y);
-//      else if (rType == NONE && oType == COMPUTATION) // single comp. objective
-// 	 // define computation cost as the objective
-// 	 compObjective(gType, mp, model, x, Tn);
+     // 8- oType as objective, other as constraint. 
+     //    if rType is NONE, then it is a single objective problem.
+     IloRangeArray objectiveCons(env);
+     if (rType == NONE && oType == COST) // single cost objective
+       // define cost as the objective
+       costObjective(gType, sp, model, x);
+     else if (rType == NONE && oType == PEAK) // single peak objective
+       // define peak as the objective
+       peakObjective(gType, sp, model, x);
 //      else if (oType == COMMUNICATION) // multi obj.
 //        {
 // 	 // define computation cost as a constraint
@@ -245,13 +231,13 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
 // 	 // define computation cost as the objective
 // 	 compObjective(gType, mp, model, x, Tn);
 //        }
-//      else
-//        {
-// 	 cerr << "Invalid use of the map() method!" << endl;
-// 	 throw(-1);
-//        }
+     else
+       {
+	 cerr << "Invalid use of the schedule() method!" << endl;
+	 throw(-1);
+       }
       // May CPLEX solve the problem!
-      ss = optimize(sp, model, x, t, PMaxCons, tCons, arrivalCons);
+     ss = optimize(sp, model, x, t, PMaxCons, tCons, arrivalCons, deadlineCons, scheduledOnceCons, precedenceCons, nonpreamptableCons, objectiveCons);
     }
     catch (IloException& e) {
       cerr << "Concert exception caught: " << e << endl;
@@ -300,7 +286,7 @@ ILOMIPINFOCALLBACK5(timeLimitCallback,
 }
 
 SchedulingSolution*
-ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons,IloRangeArray arrivalCons/*, IloRangeArray communicationMappingCons, IloRangeArray capacityCons, IloRangeArray objectiveCons*/)
+ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons, IloRangeArray arrivalCons, IloRangeArray deadlineCons, IloRangeArray scheduledOnceCons, IloRangeArray precedenceCons, IloRangeArray nonpreamptableCons, IloRangeArray objectiveCons)
 {
   SchedulingSolution* ss = NULL; //new MappingSolution(mp);
   IloEnv env = model.getEnv();
@@ -319,15 +305,15 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
   }
 
   //cplex.resetTime();
-//   if ( !cplex.solve() ) 
-//     {
-//       env.error() << "Failed to optimize LP" << endl;
-//       ms->setSolutionTime( cplex.getTime() );
-//       ms->setStatus(mappingSolutionStatusAdapter(IloAlgorithm::Infeasible)/*IloAlgorithm::Infeasible*/);
-//       throw InfeasibleSolutionException(ms);
-//     }
+   if ( !cplex.solve() ) 
+     {
+       env.error() << "Failed to optimize LP" << endl;
+       //       ms->setSolutionTime( cplex.getTime() );
+       //       ms->setStatus(mappingSolutionStatusAdapter(IloAlgorithm::Infeasible)/*IloAlgorithm::Infeasible*/);
+       //       throw InfeasibleSolutionException(ms);
+     }
 //   ms->setSolutionTime( cplex.getTime() );
-//   cout << "Solution time = " << cplex.getTime() << endl;  
+   cout << "Solution time = " << cplex.getTime() << endl;  
 
 //   ms->setGap(cplex.getMIPRelativeGap()*100);
 
@@ -341,6 +327,7 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
 //   else // oType == COMMUNICATION_AS_CONSTRAINT
 //     ms->setCompCost( cplex.getObjValue() );
 //   */
+   cout << "Obj. value: " << cplex.getObjValue() << endl;
 
 //   IloNumArray vals(env);
 //   cplex.getValues(x, vals);
@@ -411,7 +398,7 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
 int ILPScheduler::sumM(int n)
 {
   int sum = 0;
-  for(int i=0; i<n-1; i++)
+  for(int i=0; i<n; i++)
     sum += sp->J()->at(i)->getL()->size();
   return sum;
 }
@@ -457,14 +444,19 @@ ILPScheduler::tConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArr
       for (int m = 0; m < M; m++)
 	{
 	  c.add( IloRange(env, 0.0, 0.0) );
-	  std::stringstream nm_str;
-	  nm_str << sumM(n)+m+1;
-	  c[sumM(n)+m].setName( ("t_c(" + nm_str.str() + ")").c_str() );
+	  //std::stringstream nm_str;
+	  //nm_str << sumM(n)+m+1;
+	  std::stringstream n_str;
+	  n_str << n+1;
+	  std::stringstream m_str;
+	  m_str << m+1;
+	  c[sumM(n)+m].setName( ("t_c(" + n_str.str() + "," + m_str.str() + ")").c_str() );
+	  c[sumM(n)+m].setLinearCoef(t[sumM(n)+m], -1.0);
 
-	  for (int l = 1; l <= sp->L(); l++)
+	  for (int l = 0; l < sp->L(); l++)
 	    {
 	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
-	      c[sumM(n)+m].setLinearCoef(x[nml], l);
+	      c[sumM(n)+m].setLinearCoef(x[nml], l+1);
 	    } // end l
 	} // end m
     } // end n
@@ -484,229 +476,141 @@ ILPScheduler::arrivalConstraints (SchedulingProblem* sp, IloModel model, IloBool
       n_str << n+1;
       c[n].setName( ("arr_c(" + n_str.str() + ")").c_str() );
 
-      c[n].setLinearCoef(t[sumM(n)+1], 1.0);
+      c[n].setLinearCoef(t[sumM(n)], 1.0);
     }
 
   model.add(c);
 } // END arrivalConstraints
 
-// void 
-// ILPScheduler::taskMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c)
-// {
-//   IloEnv env = model.getEnv();
-//   //fprintf(file,"\\Constraint 2\n\n");
-  
-//   for(int j=0;j<mp->T();j++)
-//     {
-//       c.add(IloRange(env, 1.0, 1.0));
-//       std::stringstream j_str;
-//       j_str << j+1;
-//       c[j].setName( ("taskmapping_c" + j_str.str()).c_str() );
-//       //fprintf(file,"c%d:",mp->N()*mp->E()+1+j);
-//       for(int m=0;m<mp->N();m++)
-//   	{
-//   	  //if(m == mp->N()-1)
-// 	    c[j].setLinearCoef(x[m*mp->T()+j], 1.0);
-// 	  //fprintf(file," x%d",m*mp->T()+1+j);
-//   	  //else
-//   	  //  fprintf(file," x%d +",m*mp->T()+1+j);
-//   	};
-      
-//       //fprintf(file," = 1");
-//       //fprintf(file,"\n");
-      
-//     };
+void
+ILPScheduler::deadlineConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
 
-//     model.add(c);
+  for(int n=0; n < sp->N(); n++)
+    {
+      c.add( IloRange(env, -IloInfinity, sp->J()->at(n)->getD()-1 ) ); // -1 is needed for saying "less than" and NOT "less than or equal"
+      std::stringstream n_str;
+      n_str << n+1;
+      c[n].setName( ("dline_c(" + n_str.str() + ")").c_str() );
+      int M = sp->J()->at(n)->getL()->size();
+      c[n].setLinearCoef(t[sumM(n)+M-1], 1.0);
+    }
 
-// } // END taskMappingConstraints
+  model.add(c);
+} // END deadlineConstraints
 
-// void 
-// ILPScheduler::faultyCoreConstraints (MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c)
-// {
-//   IloEnv env = model.getEnv();
-//   int i = 0;
-//   for(vector<int>::iterator it = mp->vFaultyNodes->begin(); it != mp->vFaultyNodes->end(); ++it)
-//     {
-//       c.add(IloRange(env, 0.0, 0.0));  
 
-//       int f = *it;
-//       std::stringstream f_str;
-//       f_str << f;
-      
-//       std::stringstream i_str;
-//       i_str << i+1;
-//       c[i].setName( ("faultycore_n" + f_str.str() + "_c" + i_str.str()).c_str() );
+void 
+ILPScheduler::scheduledOnceConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
 
-//       for(int j=0;j<mp->T();j++)
-// 	{
-// 	  c[i].setLinearCoef(x[(f-1)*mp->T()+j], 1.0);
-// 	};
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for(int m = 0; m < M; m++)
+	{
+	  c.add( IloRange(env, 1.0, 1.0) );
+	  std::stringstream n_str;
+	  n_str << n+1;
+	  std::stringstream m_str;
+	  m_str << m+1;
+	  c[sumM(n)+m].setName( ("once_c(" + n_str.str() + "," + m_str.str() + ")").c_str() );
 
-//       i++;
-//     } // END for vFaultyNodes
+	  for(int l=0; l < sp->L(); l++)
+	    {
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
+	      c[sumM(n)+m].setLinearCoef(x[nml], 1.0);
+	    } // end l
+	} // end m
+    } // end n
+    
+  model.add(c);
 
-//   model.add(c);
+}  // END scheduledOnceConstraints
 
-// } // END faultyCoreConstraints
+void
+ILPScheduler::precedenceConstraints (SchedulingProblem* sp, IloModel model, IloNumVarArray t, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
 
-// void 
-// ILPScheduler::taskMovingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray x, IloRangeArray c)
-// {
-//   RemappingProblem* rmp = NULL;
-//   /* TODO
-//   if (mp instanceof RemappingProblem)
-//     {
-//       rmp = dynamic_cast<RemappingProblem*>(mp);
-//     }
-//   else
-//     {
-//       cerr << "ERROR: taskMovingConstraints is called with wrong MappingProblem!"
-//       exit(-1);
-//     }
-//   */
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for (int m = 0; m < M-1; m++)
+	{
+	  c.add( IloRange(env, 1.0, IloInfinity) );
+	  std::stringstream n_str;
+	  n_str << n+1;
+	  std::stringstream m_str;
+	  m_str << m+1;
+	  std::stringstream mpp_str;
+	  mpp_str << m+2;
+	  c[sumM(n)-n+m].setName( ("prec_c(" + n_str.str() + "," + m_str.str() + "_" + mpp_str.str() + ")").c_str() );
+	  c[sumM(n)-n+m].setLinearCoef(t[sumM(n)+m], -1.0);
+	  c[sumM(n)-n+m].setLinearCoef(t[sumM(n)+m+1], 1.0);
+	} // end m
+    } // end n
 
-//   rmp = dynamic_cast<RemappingProblem*>(mp);
+  model.add(c);
+} // END precedenceConstraints
 
-//   IloEnv env = model.getEnv();
+// returns the total number of job pieces of non-preamptable jobs until n-th job,
+// i.e., excluding n
+int ILPScheduler::sumMofNonPr(int n)
+{
+  int sum = 0;
+  for(int i=0; i<n; i++)
+    {
+      if( !( sp->J()->at(i)->getPr() ) )
+	sum += sp->J()->at(i)->getL()->size();
+    }
+  return sum;
+}
 
-//   int num1s = 0;
+// returns the number of non-preamptable jobs until n-th job,
+// i.e., excluding n
+int ILPScheduler::sumOfNonPr(int n)
+{
+  int count = 0;
+  for(int i=0; i<n; i++)
+    {
+      if( !( sp->J()->at(i)->getPr() ) )
+	count += 1;
+    }
+  return count;
+}
 
-//   for (int i=0; i < rmp->N(); i++)
-//     {
-//       for (int j=0; j < rmp->T(); j++)
-// 	{
-// 	  bool i_faulty = false;
-// 	  for (int f=0; f < rmp->vFaultyNodes->size(); f++)
-// 	    {
-// 	      if ( i+1 == (*(rmp->vFaultyNodes))[f] )
-// 		i_faulty = true;
-// 	    }
-	  
-// 	  if ( !i_faulty && rmp->Mnt()[i][j] == 1 )
-// 	    {
-// 	      num1s++;
-// 	      //	      c[0].setLinearCoef(x[i*rmp->T()+j], 1.0);
-// 	    }
-// 	}
-//     }
+void
+ILPScheduler::nonpreamptableConstraints (SchedulingProblem* sp, IloModel model, IloNumVarArray t, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
 
-//   c.add(IloRange(env, num1s, num1s));
-//   c[0].setName("taskmoving_c1");
+  for(int n=0; n < sp->N(); n++)
+    {
+      if( sp->J()->at(n)->getPr() )
+	continue;
+      int M = sp->J()->at(n)->getL()->size();
+      for (int m = 0; m < M-1; m++)
+	{
+	  c.add( IloRange(env, 1.0, 1.0) );
+	  std::stringstream n_str;
+	  n_str << n+1;
+	  std::stringstream m_str;
+	  m_str << m+1;
+	  std::stringstream mpp_str;
+	  mpp_str << m+2;
+	  c[sumMofNonPr(n)-sumOfNonPr(n)+m].setName( ("pr_c(" + n_str.str() + "," + m_str.str() + "_" + mpp_str.str() + ")").c_str() );
+	  c[sumMofNonPr(n)-sumOfNonPr(n)+m].setLinearCoef(t[sumM(n)+m], -1.0);
+	  c[sumMofNonPr(n)-sumOfNonPr(n)+m].setLinearCoef(t[sumM(n)+m+1], 1.0);
+	} // end m
+    } // end n
 
-//   for (int i=0; i < rmp->N(); i++)
-//     {
-//       for (int j=0; j < rmp->T(); j++)
-//   	{
-//   	  bool i_faulty = false;
-//   	  for (int f=0; f<rmp->vFaultyNodes->size(); f++)
-//   	    {
-//   	      if ( i+1 == (*(rmp->vFaultyNodes))[f] )
-//   		i_faulty = true;
-//   	    }
+  model.add(c);
+} // END nonpreamptableConstraints
 
-//   	  if ( !i_faulty && rmp->Mnt()[i][j] == 1 )
-//   	    {
-//   	      c[0].setLinearCoef(x[i*rmp->T()+j], 1.0);
-//   	    }
-//   	}
-//     }
-  
-//   model.add(c);
-		
-//   //fprintf(file,"\\Constraint 2\n\n");
-  
-//  // for(int j=0;j<mp->T();j++)
-//   //  {
-//   //    c.add(IloRange(env, 1.0, 1.0));
-//   //    std::stringstream j_str;
-//   //    j_str << j+1;
-//   //    c[8].setName( ("taskmoving_c" + j_str.str()).c_str() );
-//   //    j_str << 1;
-//   //    c.setName( ("taskmoving_c" + j_str.str()).c_str() );
-//   //    c.setLinearCoef(x[2], 1.0);
-//   ////      model.add( x[78] + x[79] + x[80] + x[81] + x[82] + x[83] + x[84] + x[85] + x[86] + x[87] + x[88] + x[89] + x[90] == 0);
-//   ////    model.add( x[40] + x[41] + x[42] + x[43] + x[44] + x[45] + x[59] + x[60] + x[61] + x[64] + x[75] + x[76] == 12);
-// //| 0000000000000| 
-// //| 0000000000000| 
-// //| 0000000000000| 
-// //| 0111111000000| 
-// //| 0000000111001| 
-// //| 0000000000110| 
-// //| 1000000000000| 
-// //| 0000000000000| 
-// //| 0000000000000| 
-//    //    };
 
-//    // model.add(c);
-
-// } // END taskMovingConstraints
-
-// void 
-// ILPScheduler::communicationMappingConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c)
-// {
-//   IloEnv env = model.getEnv();
-  
-//   for(int i=0; i<mp->E(); i++)
-//     {
-//       c.add(IloRange(env, -IloInfinity, 1.0));
-//       std::stringstream i_str;
-//       i_str << i+1;
-//       c[i].setName( ("communicationmapping_c" + i_str.str()).c_str() );
-//       //fprintf(file,"c%d: ",N*E+T+i+1);
-      
-//       for(int j=0; j<mp->P(); j++)
-// 	{
-// 	  //a = 1 + i + j*mp->E();
-// 	  c[i].setLinearCoef(y[i + j*mp->E()], 1.0);
-// 	  //if(j == mp->P()-1)
-// 	  //fprintf(file,"y%d ",a);
-// 	  //else
-// 	  //fprintf(file,"y%d + ",a);
-// 	}
-//       //fprintf(file,"<= 1\n",a);
-//     }
-
-//   model.add(c);
-// } // END communicationMappingConstraints
-
-// void 
-// ILPScheduler::capacityConstraints(MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c)
-// {
-//   IloEnv env = model.getEnv();
-
-//   for(int i=0; i<mp->L(); i++)
-//     {
-//       c.add(IloRange(env, -IloInfinity, mp->C()));
-//       std::stringstream i_str;
-//       i_str << i+1;
-//       c[i].setName( ("capacity_c" + i_str.str()).c_str() );
-//       //fprintf(file,"c%d:",N*E+E+T+i+1);
-      
-//       for(int k=0; k<mp->P(); k++)
-// 	{
-// 	  if(mp->Mpl()[k][i] != 0)
-// 	    {
-// 	      for(int j=0; j<mp->E(); j++)
-// 		{
-// 		  //if(flag != 1)
-// 		    //{
-// 		  c[i].setLinearCoef(y[j + k*mp->E()], mp->d()[j]);
-// 		      //fprintf(file,"%lf y%d",d[j],j+1+k*E);
-// 		      //flag=1;
-// 		      //}
-// 		      //else
-// 		      //fprintf(file,"+ %lf y%d",d[j],j+1+k*E);
-// 		}
-// 	    }
-	  
-// 	}
-//       //fprintf(file,"<= %f\n\n",C);
-//       //flag=0;
-//     }		
-  
-//   model.add(c);
-// } // END capacityConstraints
 
 // void 
 // ILPScheduler::compObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double compConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray x, IloNumVarArray Tn, IloRangeArray c)
@@ -795,91 +699,89 @@ ILPScheduler::arrivalConstraints (SchedulingProblem* sp, IloModel model, IloBool
 //   delete[] Tnt;
 // } // END computationObjectiveAsConstraint
 
+void 
+ILPScheduler::costObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x)
+{
+  IloEnv env = model.getEnv();
+  IloRangeArray c(env);
 
-// void 
-// ILPScheduler::compObjective (GoalType gType, MappingProblem* mp, IloModel model, IloBoolVarArray x, IloNumVarArray Tn)
-// {
-//   IloEnv env = model.getEnv();
-//   IloRangeArray c(env);
+  IloObjective obj;
+  if(gType == MINIMIZE)
+    obj = IloMinimize(env);
+  else // gType == MAXIMIZE
+    obj = IloMaximize(env);
 
-//   IloObjective obj;
-//   if(gType == MINIMIZE)
-//     obj = IloMinimize(env);
-//   else // gType == MAXIMIZE // maximize doesn't work. not to be used!
-//     obj = IloMaximize(env);
+  // // define cost as a decision variable
+  // IloNumVar cost(env);
+  // cost.setName("cost");
 
-//   //fprintf(file,"\n\\Obj 2\n\n");
+  // c.add(IloRange(env, 0.0, 0.0));
+  // c[0].setName("cost_c");
+  // c[0].setLinearCoef(cost, -1.0);
 
-//   // Ttn = Ttc Mcn
-//   double** Ttn = new double*[mp->T()];
-//   for(int i=0; i<mp->T(); i++)
-//     Ttn[i] = new double[mp->N()];
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for(int m = 0; m < M; m++)
+	{
+	  for(int l=0; l < sp->L(); l++)
+	    {
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
+	      double p_l = sp->pMin()->at(l);
+	      double l_nm = sp->J()->at(n)->getL()->at(m);
+	      obj.setLinearCoef(x[nml], p_l*l_nm );
+	    } // end l
+	} // end m
+    } // end n
+  //  model.add(c);
 
-//   for(int i=0; i<mp->T(); i++){
-//     for(int j=0; j<mp->N(); j++){
-//       Ttn[i][j] = 0.0;
-//     }
-//   }
+  // minimize cost
+  //obj.setLinearCoef(cost, 1.0);
+  model.add(obj);
 
-//   for(int i=0; i<mp->N(); i++){
-//     for(int j=0; j<mp->T(); j++){
-//       for(int k=0; k<mp->CT(); k++){
-// 	Ttn[j][i] = Ttn[j][i] + mp->Ttc()[j][k] * mp->Mnc()[i][k] ;
-//       }
-//     }
-//   }
+} // END costObjective
 
-//   // define constraints, first Tn = Ttn . Xtn
-//   for(int i=0; i < mp->N(); i++)
-//     {
-//       c.add(IloRange(env, 0.0, 0.0));
-//       std::stringstream i_str;
-//       i_str << i+1;
-//       c[i].setName( ("computation_Tn_c" + i_str.str()).c_str() );
+void 
+ILPScheduler::peakObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x)
+{
+  IloEnv env = model.getEnv();
+  IloRangeArray c(env);
 
-//       c[i].setLinearCoef( Tn[i], -1.0 );
-//       //fprintf(file,"c%d: -B%d +",N*E+E+T+T+i+1,i+1);
-//       for(int j=0; j<mp->T(); j++)
-// 	{
-// 	  c[i].setLinearCoef( x[j + i*mp->T()], Ttn[j][i] );
-// 	  //if(j==mp->T()-1)
-// 	  //  fprintf(file,"%lf x%d =0\n",Ttn[i][j],j+1+i*T);
-// 	  //else
-// 	  //  fprintf(file,"%lf x%d +",Ttn[i][j],j+1+i*T);
-// 	}
-//     }
-//   //fprintf(file,"\n");
+  IloObjective obj;
+  if(gType == MINIMIZE)
+    obj = IloMinimize(env);
+  else // gType == MAXIMIZE
+    obj = IloMaximize(env);
 
-//   // define T = max (Tn) as a decision variable
-//   IloNumVar T(env);//, -IloInfinity, compConstraint);
-//   T.setName("T");
+  // // define cost as a decision variable
+  // IloNumVar cost(env);
+  // cost.setName("cost");
 
-//   // define constraints - second T - Tn >= 0
-//   for(int i=0; i < mp->N(); i++)
-//     {
-//       c.add(IloRange(env, 0.0, IloInfinity));
-//       std::stringstream i_str;
-//       i_str << i+mp->N()+1;
-//       c[i+mp->N()].setName( ("computation_maxTn_c" + i_str.str()).c_str() );
-//       c[i+mp->N()].setLinearCoef(T, 1.0);
-//       c[i+mp->N()].setLinearCoef(Tn[i], -1.0);
+  // c.add(IloRange(env, 0.0, 0.0));
+  // c[0].setName("cost_c");
+  // c[0].setLinearCoef(cost, -1.0);
 
-//       //fprintf(file,"c%d: T - B%d => 0\n",N*E+E+T+T+N+i+1,i+1);
-//     }
-//   //  fprintf(file,"\n");
-//   //fprintf(file,"Bounds\n\n");
-//   //fprintf(file,"T  <= 8.51\n\n");
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for(int m = 0; m < M; m++)
+	{
+	  for(int l=0; l < sp->L(); l++)
+	    {
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
+	      double p_l = sp->pMin()->at(l);
+	      double l_nm = sp->J()->at(n)->getL()->at(m);
+	      obj.setLinearCoef(x[nml], p_l*l_nm );
+	    } // end l
+	} // end m
+    } // end n
+  //  model.add(c);
 
-//   model.add(c);
-//   // minimize T
-//   obj.setLinearCoef(T, 1);
-//   model.add(obj);
+  // minimize cost
+  //obj.setLinearCoef(cost, 1.0);
+  model.add(obj);
 
-//   // free mem
-//   for(int i=0; i<mp->T(); i++)
-//     delete[] Ttn[i];
-//   delete[] Ttn;
-// } // END compObjective
+} // END peakObjective
 
 
 // void ILPScheduler::commObjective (GoalType gType, MappingProblem* mp, IloModel model, IloBoolVarArray y)
