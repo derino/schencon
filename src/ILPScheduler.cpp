@@ -335,7 +335,8 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
 	   Xnml[n][m] = new int[sp->L()];
 	   for(int l=0; l<sp->L(); l++)
 	     {
-	       Xnml[n][m][l] = (bool)vals[sumM(n)*sp->L()+m*sp->L()+l]; // casting to bool is VERY IMPORTANT!!!
+	       Xnml[n][m][l] = (bool)(IloBool)vals[sumM(n)*sp->L()+m*sp->L()+l]; // casting to bool is VERY IMPORTANT!!! EDIT: casting to IloBool is VERY VERY IMPORTANT!!! due to precision problems, very small non-zero values are casted to true instead of false.
+	       //	       cout << "Xnml(" << n << "," << m << "," << l << "): " << (bool)(IloBool)vals[sumM(n)*sp->L()+m*sp->L()+l] << endl;
 	     } // end l
 	 } // end m
      } // end n

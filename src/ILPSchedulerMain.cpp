@@ -145,8 +145,13 @@ void execute () // old main
   cout << "Solutions:" << endl;
   minCostSol->print(cout);
   minPeakSol->print(cout);
-  //  cout << *minCostSol << endl;
-  //cout << *minPeakSol << endl;
+
+  // Relevant results of the ILP solution
+  // minCostSol->getCost();
+  // minPeakSol->getPeak();
+
+  // cout << *minCostSol << endl;
+  // cout << *minPeakSol << endl;
 
   delete minCostSol;
   delete minPeakSol;

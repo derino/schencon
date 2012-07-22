@@ -224,7 +224,7 @@ void SchedulingSolution::print(ostream& out)
 		{
 		  if( Xnml[n][m][l] == 1)
 		    {
-		      cout << l << " ";
+		      cout /*<< "(" << n << "," << m << "," << l << ")"*/ << l << " ";
 		    }
 		} // end l
 	    } // end m
