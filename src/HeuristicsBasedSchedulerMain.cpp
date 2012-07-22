@@ -95,8 +95,14 @@ int main()
 //      MOS(J, emptyTab, pNondominatedSet, P_max, p_min, P_H);
 	vector<Signal<int>*> emptyTab;
 	sp->setPMax( sp->PMaxHigh() );
-        allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 	
+	// Cost minimization greedy 
+	allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+	
+	// allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+	// allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
 	/*
 	double mCost = numeric_limits<double>::max();
         // Cost minTab
