@@ -53,11 +53,11 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
 
   if (taskNumber == (signed) J.size())
     {
-      cout << "no more tasks so we have reached to the leaf!!" << endl;
+      // cout << "no more tasks so we have reached to the leaf!!" << endl;
       // Reached leaf
       // calculate cost, compare with minimum cost
       double cost = evaluateCost(inputTab, J, P_max, p_min, P_H);
-      cout << "Cost for this tree path: " << cost << endl;
+      // cout << "Cost for this tree path: " << cost << endl;
 
       double peak = evaluateCostForLees(inputTab, J);
       //TODO:add tab to SchedulingMOMHSolution
@@ -75,7 +75,7 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
       sol->setTab(tab);
       if ( pNondominatedSet->Update(*sol) == true )
       {
-          cout << "new pareto point" << endl;
+	//cout << "new pareto point" << endl;
       }
       else
         delete sol;
@@ -144,7 +144,8 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 
   Signal<double>* P_tot = P__tot2(inputTab, J);
 
-  P_tot->print();
+  // we may print the tot here.
+  //P_tot->print();
 
   vector<Pair> vPTotInterval;
 
@@ -157,11 +158,13 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
     }
 
   sort(vPTotInterval.begin(), vPTotInterval.end(), compare);
+  /*
   cout << "sorted p_tot: [";
   for (vector<Pair>::iterator it = vPTotInterval.begin(); it
       != vPTotInterval.end(); ++it)
     cout << "(" << (*it).index << "," << (*it).value << ")";
   cout << "]" << endl;
+  */
   vector<int> vSelectedIndices;
 
   for (int i = 0; i < task->getL()->size(); i++)
@@ -186,9 +189,9 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
       schedulesLength);
 
   inputTab.push_back(s);
-
-  //printTab(tab);
-
+  cout << "hey!" << endl;
+  printTab(inputTab);
+  cout << "hey 2 !" << endl;
   allocTab(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max, p_min, P_H, taskNumber + 1);
 
   // TODO: fix memory leakage
@@ -293,25 +296,27 @@ pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 
           if (isInInterval(vPMin[j].index, rangeTask))
             {
-              // TODO: check if Pmax is violated for selected slot...
-              //vPMin[j].index'te bir deger varmis gibi yeni bir s yaratilacak.
-              //s taba eklenip Ptot hesaplanacak o slottaki
+              // checking if Pmax is violated for selected slot...
+              // vPMin[j].index'te bir deger varmis gibi yeni bir s yaratilacak.
+              // s taba eklenip Ptot hesaplanacak o slottaki
               // En son da eklenen schedulei tabtan sil
               if (P_tot->at(vPMin[j].index) + task->getL()->at(k) <= P_max)
                 {
                   s_task[vPMin[j].index] = vTaskParts[k].index;
-                  //                                          cout << "s_task[" << vPMin[j].index << "]: " << vTaskParts[k].index << endl;
+                  // cout << "s_task[" << vPMin[j].index << "]: " << vTaskParts[k].index << endl;
                   break;
                 }
             }
         }
     }
-  cout << "Found Schedule: ";
+  //  cout << "Found Schedule: ";
+  /*
   for (unsigned int i = 0; i < s_task.size(); i++)
     {
       cout << s_task[i] << " ";
     }
   cout << endl;
+  */
   // TODO: Exception ekle.
 
   int* s_values = scheduleNorm(s_task);
@@ -339,38 +344,38 @@ npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>
   Task* task = J[taskNumber];
   int schedulesLength = p_min.size();
   // Non-preemptive task scheduling
-  cout << "Non-preemptive task #" << taskNumber << " " << task->getName()
-      << " is in process.." << endl;
-  //alttaki iki satir daha iyi anlamak icin eklendi gereksiz islemler aslinda..
-  task->print();
+  // cout << "Non-preemptive task #" << taskNumber << " " << task->getName()
+  //    << " is in process.." << endl;
+  // alttaki iki satir daha iyi anlamak icin eklendi gereksiz islemler aslinda..
+  // task->print();
 
   for (int startTime = task->getA(); startTime <= task->getD()
       - task->getL()->size(); startTime++)
     {
 
-      cout << task->getName() << " icin inputTab olusturuldu..." << endl;
+      // cout << task->getName() << " icin inputTab olusturuldu..." << endl;
       vector<Signal<int>*> tab(inputTab);
 
-      cout << "Task " << task->getName()
-          << " is scheduling now for startTime: " << startTime << ".." << endl;
+      //cout << "Task " << task->getName()
+      //    << " is scheduling now for startTime: " << startTime << ".." << endl;
 
       Signal<int>* scheduleForStartTime = getNonPreemptiveSchedule(*task,
           startTime, schedulesLength);
 
       tab.push_back(scheduleForStartTime);
 
-      cout << "latest schedule for task: " << task->getName()
-          << " has been copied to the tab.. for start time: " << startTime
-          << endl;
+      //cout << "latest schedule for task: " << task->getName()
+      //    << " has been copied to the tab.. for start time: " << startTime
+      //    << endl;
       //printTab(tab);
 
       if (isConstraintSatisfied(tab, J, P_max))
         {
           if (taskNumber + 1 != (signed) J.size())
             {
-              cout
-                  << "Moving to following task - Jumping the following tree branch-"
-                  << endl;
+              //cout
+	      //  << "Moving to following task - Jumping the following tree branch-"
+	      //  << endl;
               allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H,
                   taskNumber + 1);
             }
@@ -388,8 +393,8 @@ npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>
 //        break;
 
 
-      cout << "finished scheduling for non-preemptive task: "
-          << task->getName() << " for start time: " << startTime << endl;
+      //cout << "finished scheduling for non-preemptive task: "
+      //  << task->getName() << " for start time: " << startTime << endl;
     }
 }
 
@@ -431,13 +436,13 @@ npCostMinWithGreedySearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, 
 
   if (taskNumber + 1 != (signed) J.size())
     {
-      cout << "Moving to following task: ";
+      //cout << "Moving to following task: ";
       allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H,
           taskNumber + 1);
     }
   else
     {
-      cout << "no more tasks so we have reached to the leaf!!" << endl;
+      //cout << "no more tasks so we have reached to the leaf!!" << endl;
       allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H,
           taskNumber + 1);
     }

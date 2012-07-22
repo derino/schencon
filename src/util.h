@@ -255,9 +255,9 @@ vector< Signal<int>* >* recfun(int tlen, int slen)
     }
   else if(tlen == slen)
     {
-      //      int* p_s_3 = new int[tlen];
-      //for(int i=0; i<tlen; i++) 
-      //p_s_3[i] = 1;
+      // int* p_s_3 = new int[tlen];
+      // for(int i=0; i<tlen; i++) 
+      // p_s_3[i] = 1;
       Signal<int>* s_3 = new Signal<int>("s_1", tlen, 1);
       allS->push_back(s_3);
       return allS;
@@ -577,6 +577,7 @@ Signal<int>* getNonPreemptiveSchedule(Task& task, int startTime, int schedulesLe
 
 	  //alttaki 2 satir anlama amaciyla yazildi
 //	  cout<< "simdi con2->print calisiyor"<<endl;
+
 	  con2->print();
 
 	  return con2;

@@ -96,16 +96,43 @@ int main()
 	vector<Signal<int>*> emptyTab;
 	sp->setPMax( sp->PMaxHigh() );
         allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
-
-        for(std::vector<TSolution*>::iterator it=pNondominatedSet->begin(); it != pNondominatedSet->end(); it++)
+	
+	/*
+	double mCost = numeric_limits<double>::max();
+        // Cost minTab
+        vector<Signal<int>*>* minCostTab = NULL;
+        double mPeak = numeric_limits<double>::max();
+        // Peak minTab 
+        vector<Signal<int>*>* minCostTab = NULL;
+	*/
+        
+	for(std::vector<TSolution*>::iterator it=pNondominatedSet->begin(); it != pNondominatedSet->end(); it++)
         {
           SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
           cout << "Pareto\t" << *msIt << endl;
-          //printTab( *(msIt->getTab()) );
-          for( vector<Signal<int>*>::iterator it = msIt->getTab()->begin(); it != msIt->getTab()->end(); it++ )
+	  printTab( *(msIt->getTab()) );
+	  
+	  /*
+	  if (mCost > msIt->getCost())
+	    {
+              mCost = msIt->getCost();
+              minCostTab = msIt->getTab();
+            }
+          if (mPeak > msIt->getPeak())
             {
+              mPeak = msIt->getPeak;
+              minPeakTab = msIt->getTab();
+            }
+          */
+
+	  /*
+	  for( vector<Signal<int>*>::iterator it = msIt->getTab()->begin(); it != msIt->getTab()->end(); it++ )
+            {
+	      cout<<"a" << endl;
               (*it)->print();
             }
+	  */
+	    
           delete msIt;
         }
 
