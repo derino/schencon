@@ -217,20 +217,6 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
      else if (rType == NONE && oType == PEAK) // single peak objective
        // define peak as the objective
        peakObjective(gType, sp, model, x);
-//      else if (oType == COMMUNICATION) // multi obj.
-//        {
-// 	 // define computation cost as a constraint
-// 	 compObjectiveAsConstraint (/*gType,*/ rType, thresholdConstraint, mp, model, x, Tn, objectiveCons);
-// 	 // define communication cost as the objective
-// 	 commObjective(gType, mp, model, y);
-//        }
-//      else if (oType == COMPUTATION) // multi obj.
-//        {
-// 	 // define communication cost as a constraint
-// 	 commObjectiveAsConstraint (rType, thresholdConstraint, mp, model, y, objectiveCons);
-// 	 // define computation cost as the objective
-// 	 compObjective(gType, mp, model, x, Tn);
-//        }
      else
        {
 	 cerr << "Invalid use of the schedule() method!" << endl;
@@ -273,7 +259,7 @@ ILOMIPINFOCALLBACK5(timeLimitCallback,
    if ( !aborted  &&  hasIncumbent() ) {
       IloNum gap = 100.0 * getMIPRelativeGap();
       IloNum timeUsed = cplex.getCplexTime() - timeStart;
-//      if ( timeUsed > 1 )  printf ("time used = %g\n", timeUsed);
+
       if ( timeUsed > timeLimit && gap < acceptableGap ) {
          getEnv().out() << endl
                         << "Good enough solution at "
@@ -288,7 +274,7 @@ ILOMIPINFOCALLBACK5(timeLimitCallback,
 SchedulingSolution*
 ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloNumVarArray t, IloRangeArray PMaxCons, IloRangeArray tCons, IloRangeArray arrivalCons, IloRangeArray deadlineCons, IloRangeArray scheduledOnceCons, IloRangeArray precedenceCons, IloRangeArray nonpreamptableCons, IloRangeArray objectiveCons)
 {
-  SchedulingSolution* ss = NULL; //new MappingSolution(mp);
+  SchedulingSolution* ss = new SchedulingSolution(sp);
   IloEnv env = model.getEnv();
 
   // Optimize the problem and obtain solution.
@@ -308,70 +294,53 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
    if ( !cplex.solve() ) 
      {
        env.error() << "Failed to optimize LP" << endl;
-       //       ms->setSolutionTime( cplex.getTime() );
-       //       ms->setStatus(mappingSolutionStatusAdapter(IloAlgorithm::Infeasible)/*IloAlgorithm::Infeasible*/);
-       //       throw InfeasibleSolutionException(ms);
+       ss->setSolutionTime( cplex.getTime() );
+       ss->setStatus( schedulingSolutionStatusAdapter(IloAlgorithm::Infeasible) );
+       throw InfeasibleSolutionException(ss);
      }
-//   ms->setSolutionTime( cplex.getTime() );
-   cout << "Solution time = " << cplex.getTime() << endl;  
+   ss->setSolutionTime( cplex.getTime() );
+   //   cout << "Solution time = " << cplex.getTime() << endl;  
 
-//   ms->setGap(cplex.getMIPRelativeGap()*100);
+   ss->setGap(cplex.getMIPRelativeGap()*100);
 
 //   //cout /*env.out()*/ << "Solution status = " << cplex.getStatus() << endl;
-//   ms->setStatus( mappingSolutionStatusAdapter(cplex.getStatus())/*cplex.getStatus()*/ );
+   ss->setStatus( schedulingSolutionStatusAdapter(cplex.getStatus()) );
 //   //env.out() << "Solution value  = " << cplex.getObjValue() << endl;
+   cout << "Min. obj. value: " << cplex.getObjValue() << endl;
 
 //   /* Not needed anymore. Cost values are calculated by using the X and Y solution values inside MappingSolution class.
-//   if(oType == COMPUTATION_AS_CONSTRAINT)
-//     ms->setCommCost( cplex.getObjValue() );
-//   else // oType == COMMUNICATION_AS_CONSTRAINT
-//     ms->setCompCost( cplex.getObjValue() );
-//   */
-   cout << "Obj. value: " << cplex.getObjValue() << endl;
+   // if(oType == PEAK)
+   //   {
+   //     ss->setPeak( cplex.getObjValue() );
 
-//   IloNumArray vals(env);
-//   cplex.getValues(x, vals);
-//   //IloIntArray valsInt(env);// = vals.toIntArray();
+   //   }
+   // else // oType == COST
+   //   {
+   //     ss->setCost( cplex.getObjValue() );
+   //     cout << "Min. cost: " << cplex.getObjValue() << endl;
+   //   }
 
-//   //  env.out() << "Xnt        = " << endl;
-//   for(int i = 0; i < mp->N(); i++)
-//     {
-//       //  env.out() << "| ";
-//       for(int j = 0; j < mp->T(); j++)
-// 	{
-// 	  //  env.out() << vals[i*mp->T() + j] << "'";
-// 	  ms->getXnt()[i][j] = (bool)vals[i*mp->T() + j]; // casting to bool is VERY IMPORTANT!!!
-// 	  //env.out() << "'" << ms->getXnt()[i][j] << " ";
-// 	}
-//       //env.out() << "| " << endl;
-//     }
+   IloNumArray vals(env);
+   cplex.getValues(x, vals);
 
-//   IloNumArray vals2(env);
-//   cplex.getValues(vals2, y);
-//   //env.out() << "Ype        = " << endl;
-//   for(int i = 0; i < mp->P(); i++)
-//     {
-//       //env.out() << "| ";
-//       for(int j = 0; j < mp->E(); j++)
-// 	{
-// 	  //env.out() << vals[i*mp->E() + j];
-// 	  ms->getYpe()[i][j] = (bool) vals2[i*mp->E() + j]; // casting to bool is VERY IMPORTANT!!!
-// 	}
-//       //env.out() << "| " << endl;
-//     }
+   int*** Xnml = new int**[sp->N()];
 
-//   /* Not needed anymore. values are calculated inside MappingSolution class.
-//   if (!noTn)
-//     {
-//       cplex.getValues(vals, Tn);
-//       //env.out() << "Tn        = " << endl;
-//       for(int i = 0; i < mp->N(); i++)
-// 	{
-// 	  //env.out() << vals[i*mp->E() + j];
-// 	  ms->getTn()[i] = vals[i];
-// 	}
-//     }
-//   */
+   for(int n=0; n<sp->N(); n++)
+     {
+       int M = sp->J()->at(n)->getL()->size();
+       Xnml[n] = new int*[M];
+
+       for(int m=0; m<M; m++)
+	 {
+	   Xnml[n][m] = new int[sp->L()];
+	   for(int l=0; l<sp->L(); l++)
+	     {
+	       Xnml[n][m][l] = (bool)vals[sumM(n)*sp->L()+m*sp->L()+l]; // casting to bool is VERY IMPORTANT!!!
+	     } // end l
+	 } // end m
+     } // end n
+
+   ss->setXnml(Xnml);
 
 //   // cplex.getSlacks(vals, routingCons);
 //   // env.out() << "Slacks        = " << vals << endl;
@@ -456,7 +425,7 @@ ILPScheduler::tConstraints (SchedulingProblem* sp, IloModel model, IloBoolVarArr
 	  for (int l = 0; l < sp->L(); l++)
 	    {
 	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
-	      c[sumM(n)+m].setLinearCoef(x[nml], l+1);
+	      c[sumM(n)+m].setLinearCoef(x[nml], l); // we have also 0th time slot so it is l instead of l+1 // TODO:test
 	    } // end l
 	} // end m
     } // end n
@@ -610,95 +579,6 @@ ILPScheduler::nonpreamptableConstraints (SchedulingProblem* sp, IloModel model, 
   model.add(c);
 } // END nonpreamptableConstraints
 
-
-
-// void 
-// ILPScheduler::compObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double compConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray x, IloNumVarArray Tn, IloRangeArray c)
-// {
-//   IloEnv env = model.getEnv();
-
-//   //fprintf(file,"\n\\Obj 2\n\n");
-
-  
-
-//   // Tnt = Mnc Tct
-//   double** Tnt = new double*[mp->N()];
-//   for(int i=0; i<mp->N(); i++)
-//     Tnt[i] = new double[mp->T()];
-
-//   for(int i=0; i<mp->N(); i++){
-//     for(int j=0; j<mp->T(); j++){
-//       Tnt[i][j] = 0.0;
-//     }
-//   }
-
-//   for(int i=0; i<mp->N(); i++){
-//     for(int j=0; j<mp->T(); j++){
-//       for(int k=0; k<mp->CT(); k++){
-// 	Tnt[i][j] = Tnt[i][j] + mp->Ttc()[j][k] * mp->Mnc()[i][k] ;
-//       }
-//     }
-//   }
-
-//   // define constraints, first Tn = Ttn . Xtn (elementwise and summed)
-//   for(int i=0; i < mp->N(); i++)
-//     {
-//       c.add(IloRange(env, 0.0, 0.0));
-//       std::stringstream i_str;
-//       i_str << i+1;
-//       c[i].setName( ("computation_Tn_c" + i_str.str()).c_str() );
-
-//       c[i].setLinearCoef( Tn[i], -1.0 );
-//       //fprintf(file,"c%d: -B%d +",N*E+E+T+T+i+1,i+1);
-//       for(int j=0; j<mp->T(); j++)
-// 	{
-// 	  c[i].setLinearCoef( x[j + i*mp->T()], Tnt[i][j] );
-// 	  //if(j==mp->T()-1)
-// 	  //  fprintf(file,"%lf x%d =0\n",Ttn[i][j],j+1+i*T);
-// 	  //else
-// 	  //  fprintf(file,"%lf x%d +",Ttn[i][j],j+1+i*T);
-// 	}
-//     }
-//   //fprintf(file,"\n");
-
-//   // define T = max (Tn) as a decision variable
-//   IloNumVar T(env);
-//   if(rType == LEQ)
-//     T.setBounds(-IloInfinity, compConstraint);
-//   else if(rType == EQ)
-//     T.setBounds(compConstraint, compConstraint);
-//   else // rType == GEQ
-//     T.setBounds(compConstraint, IloInfinity);
-//   T.setName("T");
-
-//   // define constraints - second T - Tn >= 0
-//   for(int i=0; i < mp->N(); i++)
-//     {
-//       //      if ( gType == MINIMIZE)
-// 	c.add(IloRange(env, 0.0, IloInfinity));
-// 	//else // gType == MAXIMIZE //TODO: this part doesn't work
-// 	//c.add(IloRange(env, -IloInfinity, 0.0));
-	
-//       std::stringstream i_str;
-//       i_str << i+mp->N()+1;
-//       c[i+mp->N()].setName( ("computation_maxTn_c" + i_str.str()).c_str() );
-//       c[i+mp->N()].setLinearCoef(T, 1.0);
-//       c[i+mp->N()].setLinearCoef(Tn[i], -1.0);
-
-//       //fprintf(file,"c%d: T - B%d => 0\n",N*E+E+T+T+N+i+1,i+1);
-//     }
-//   //  fprintf(file,"\n");
-//   //fprintf(file,"Bounds\n\n");
-//   //fprintf(file,"T  <= 8.51\n\n");
-
-//   model.add(c);
-
-//   // free mem
-//   for(int i=0; i<mp->N(); i++)
-//     delete[] Tnt[i];
-//   delete[] Tnt;
-// } // END computationObjectiveAsConstraint
-
 void 
 ILPScheduler::costObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x)
 {
@@ -710,14 +590,6 @@ ILPScheduler::costObjective (GoalType gType, SchedulingProblem* sp, IloModel mod
     obj = IloMinimize(env);
   else // gType == MAXIMIZE
     obj = IloMaximize(env);
-
-  // // define cost as a decision variable
-  // IloNumVar cost(env);
-  // cost.setName("cost");
-
-  // c.add(IloRange(env, 0.0, 0.0));
-  // c[0].setName("cost_c");
-  // c[0].setLinearCoef(cost, -1.0);
 
   for(int n=0; n < sp->N(); n++)
     {
@@ -733,10 +605,8 @@ ILPScheduler::costObjective (GoalType gType, SchedulingProblem* sp, IloModel mod
 	    } // end l
 	} // end m
     } // end n
-  //  model.add(c);
 
   // minimize cost
-  //obj.setLinearCoef(cost, 1.0);
   model.add(obj);
 
 } // END costObjective
@@ -753,90 +623,55 @@ ILPScheduler::peakObjective (GoalType gType, SchedulingProblem* sp, IloModel mod
   else // gType == MAXIMIZE
     obj = IloMaximize(env);
 
-  // // define cost as a decision variable
-  // IloNumVar cost(env);
-  // cost.setName("cost");
-
-  // c.add(IloRange(env, 0.0, 0.0));
-  // c[0].setName("cost_c");
-  // c[0].setLinearCoef(cost, -1.0);
-
-  for(int n=0; n < sp->N(); n++)
+  // define Ptot decision variables
+  IloNumVarArray Ptot(env);
+  for(int l=0; l<sp->L(); l++)
     {
-      int M = sp->J()->at(n)->getL()->size();
-      for(int m = 0; m < M; m++)
+      Ptot.add(IloNumVar(env));
+      std::stringstream l_str;
+      l_str << l+1;
+      Ptot[l].setName( ("Ptot("+ l_str.str() + ")").c_str() );
+    }
+  
+  // define constraints, first Ptot
+  for(int l=0; l < sp->L(); l++)
+    {
+      c.add(IloRange(env, 0.0, 0.0));
+      std::stringstream l_str;
+      l_str << l+1;
+      c[l].setName( ("peak_Ptot_c" + l_str.str()).c_str() );
+      c[l].setLinearCoef( Ptot[l], -1.0 );
+
+      for(int n=0; n < sp->N(); n++)
 	{
-	  for(int l=0; l < sp->L(); l++)
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m = 0; m < M; m++)
 	    {
 	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
-	      double p_l = sp->pMin()->at(l);
 	      double l_nm = sp->J()->at(n)->getL()->at(m);
-	      obj.setLinearCoef(x[nml], p_l*l_nm );
-	    } // end l
-	} // end m
-    } // end n
-  //  model.add(c);
+	      c[l].setLinearCoef( x[nml], l_nm );
+	    }
+	}
+    }
 
-  // minimize cost
-  //obj.setLinearCoef(cost, 1.0);
+  // define peak = max (Ptot) as a decision variable
+  IloNumVar peak(env);//, -IloInfinity, compConstraint);
+  peak.setName("peak");
+
+  // define constraints - second peak - Ptot_l >= 0
+  for(int l=0; l < sp->L(); l++)
+    {
+      c.add(IloRange(env, 0.0, IloInfinity));
+      std::stringstream l_str;
+      l_str << l+1;
+      c[l+sp->L()].setName( ("peak_maxPtot_c" + l_str.str()).c_str() );
+      c[l+sp->L()].setLinearCoef(peak, 1.0);
+      c[l+sp->L()].setLinearCoef(Ptot[l], -1.0);
+    }
+
+  model.add(c);
+  // minimize peak
+  obj.setLinearCoef(peak, 1);
   model.add(obj);
 
 } // END peakObjective
-
-
-// void ILPScheduler::commObjective (GoalType gType, MappingProblem* mp, IloModel model, IloBoolVarArray y)
-// {
-//    IloEnv env = model.getEnv();
-
-//    IloObjective obj;
-//    if(gType == MINIMIZE)
-//      obj = IloMinimize(env);
-//    else // gType == MAXIMIZE
-//      obj = IloMaximize(env);
-
-//    for(int i=0; i<mp->P(); i++)
-//      {
-//        int numLinksInPath = 0; // sum of 1 row in Mpl
-//        for(int k=0; k<mp->L(); k++)
-// 	   numLinksInPath = numLinksInPath + mp->Mpl()[i][k];
-       
-//        for(int j=0;j<mp->E();j++)
-// 	 {
-// 	   double dOnPath = (double)numLinksInPath * mp->d()[j];
-// 	   obj.setLinearCoef(y[j+i*mp->E()], dOnPath);
-// 	 }
-//      }
-   
-//    model.add(obj);
-// } // END commObjective
-
-
-// void ILPScheduler::commObjectiveAsConstraint (RelationType rType, double commConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray y, IloRangeArray c)
-// {
-//    IloEnv env = model.getEnv();
-
-//    // define constraint
-//    if (rType == LEQ)
-//      c.add(IloRange(env, -IloInfinity, commConstraint));
-//    else if (rType == EQ)
-//      c.add(IloRange(env, commConstraint, commConstraint));
-//    else // rType == GEQ
-//      c.add(IloRange(env, commConstraint, IloInfinity));
-   
-//    c[0].setName("communication_c1");
-
-//    for(int i=0; i<mp->P(); i++)
-//      {
-//        int numLinksInPath = 0; // sum of 1 row in Mpl
-//        for(int k=0; k<mp->L(); k++)
-// 	   numLinksInPath = numLinksInPath + mp->Mpl()[i][k];
-       
-//        for(int j=0;j<mp->E();j++)
-// 	 {
-// 	   double dOnPath = (double)numLinksInPath * mp->d()[j];
-// 	   c[0].setLinearCoef(y[j+i*mp->E()], dOnPath);
-// 	 }
-//      }
-   
-//    model.add(c);
-// } // END commObjectiveAsConstraint

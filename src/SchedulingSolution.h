@@ -39,7 +39,6 @@
 #include <cassert>
 using namespace std;
 
-
 //#include <ilcplex/ilocplex.h>
 #include "SchedulingProblem.h"
 
@@ -64,17 +63,17 @@ class SchedulingSolution
   SchedulingSolution(SchedulingSolution& ss);
   SchedulingSolution(SchedulingProblem* sp);
   int*** getXnml();
-
+  void setXnml(int***);
   double getCost();
+  //void setCost(double);
   double getPeak();
-  /*IloNum*/double getSolutionTime();
-  void setSolutionTime(double/*IloNum*/);
+  //void setPeak(double);
+  double getSolutionTime();
+  void setSolutionTime(double);
   SchedulingSolutionStatus getStatus();
-  //  IloAlgorithm::Status getStatus();
   void setStatus(SchedulingSolutionStatus);
-  //  void setStatus(IloAlgorithm::Status);
-  void setGap(double);
   double getGap();
+  void setGap(double);
   SchedulingProblem* getSP();
   
   bool dominatesAbsolute(SchedulingSolution*);
@@ -89,8 +88,7 @@ class SchedulingSolution
   
   SchedulingSolutionStatus status;
   double gap; /* in percentages */
-  //  IloAlgorithm::Status status;
-  /*IloNum*/double solutionTime;
+  double solutionTime; // in seconds
 };
 
 std::ostream& operator<<(std::ostream&, SchedulingSolution&);

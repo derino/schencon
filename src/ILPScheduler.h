@@ -42,6 +42,7 @@
 #include "SchedulingProblem.h"
 #include "SchedulingSolution.h"
 #include "InfeasibleSolutionException.h"
+#include "SchedulingSolutionStatusAdapter.h"
 
 ILOSTLBEGIN
 

@@ -42,8 +42,10 @@ ilpsec_SOURCES = ILPScheduler.cpp \
 		 SchedulingSolution.h \
 		 SchedulingSolution.cpp \
 		 InfeasibleSolutionException.h \
+		 SchedulingSolutionStatusAdapter.h \
 		 Task.h \
 		 Task.cpp \
+		 util.h \
 		 Signal.h
 		 
 		
@@ -55,7 +57,8 @@ problemcreator_SOURCES = ProblemCreatorMain.cpp \
 			 Task.h \
 			 Task.cpp \
 			 SchedulingProblem.h \
-			 SchedulingProblem.cpp
+			 SchedulingProblem.cpp \
+			 util.h
 
 problemcreator_LDADD   = 
 
