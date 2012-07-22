@@ -142,9 +142,11 @@ void execute () // old main
   SchedulingSolution* minPeakSol = ilps.schedule(MINIMIZE, PEAK);
 
   // Print solutions
-  cout << "Solutions (TODO):" << endl;
-  cout << *minCostSol << endl;
-  cout << *minPeakSol << endl;
+  cout << "Solutions:" << endl;
+  minCostSol->print(cout);
+  minPeakSol->print(cout);
+  //  cout << *minCostSol << endl;
+  //cout << *minPeakSol << endl;
 
   delete minCostSol;
   delete minPeakSol;

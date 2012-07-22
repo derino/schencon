@@ -73,34 +73,87 @@ SchedulingSolution::SchedulingSolution(SchedulingProblem* _sp) : sp(_sp), status
   //     Xnt[i][j] = 5;
 }
 
-void SchedulingSolution::setStatus(SchedulingSolutionStatus s/*IloAlgorithm::Status s*/)
-{
-  status = s;
-}
-
 int*** SchedulingSolution::getXnml()
 {
   return Xnml;
 }
 
+void SchedulingSolution::setXnml(int*** xnml)
+{
+  Xnml = xnml;
+}
 
 double SchedulingSolution::getCost()
 {
-  // TODO
-  double cost = 0;
+  double cost = 0.0;
+
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for(int m = 0; m < M; m++)
+	{
+	  for(int l=0; l < sp->L(); l++)
+	    {
+	      if( Xnml[n][m][l] == 1)
+		{
+		  double p_l = sp->pMin()->at(l);
+		  double l_nm = sp->J()->at(n)->getL()->at(m);
+		  cost += p_l*l_nm;
+		}
+	    } // end l
+	} // end m
+    } // end n
+
   return cost;
 }
 
+/*void SchedulingSolution::setCost(double c)
+{
+  cost = c;
+}*/
+
 double SchedulingSolution::getPeak()
 {
-  // TODO
-  double peak = 0;
-  return peak;
+  double* Ptot = new double[sp->L()];
+
+  for(int l=0; l < sp->L(); l++)
+    {
+      Ptot[l] = 0.0;
+      for(int n=0; n < sp->N(); n++)
+	{
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m = 0; m < M; m++)
+	    {
+	      if( Xnml[n][m][l] == 1)
+		{
+		  double l_nm = sp->J()->at(n)->getL()->at(m);
+		  Ptot[l] += l_nm;
+		}
+	    }
+	}
+    }
+
+  // could have used max from util.h but there were problems with compilation
+  double max = 0.0;
+  for(int l=0; l<sp->L(); l++)
+    if(Ptot[l] > max)
+      max = Ptot[l];
+  return max;
 }
+
+/*void SchedulingSolution::setPeak(double p)
+{
+  peak = p;
+  }*/
 
 /*IloAlgorithm::Status*/SchedulingSolutionStatus SchedulingSolution::getStatus()
 {
   return status;
+}
+
+void SchedulingSolution::setStatus(SchedulingSolutionStatus s)
+{
+  status = s;
 }
 
 /*IloNum*/double SchedulingSolution::getSolutionTime()
@@ -146,7 +199,7 @@ bool SchedulingSolution::dominatesAbsolute(SchedulingSolution* ss)
 
 std::ostream& operator<<(std::ostream& os, SchedulingSolution& ss)
 {
-  return os << ss.getCost() << "\t" << ss.getPeak();
+  return os << ss.getCost() << "\t" << ss.getPeak() << "\t@" << ss.getSolutionTime() << "\tgap:" << ss.getGap();
 }
 
 void SchedulingSolution::print(ostream& out)
@@ -157,8 +210,28 @@ void SchedulingSolution::print(ostream& out)
       out << "cost  = " << getCost() << endl;
       out << "peak  = " << getPeak() << endl;
 
-      // TODO
-      out << "Xnml        = TODO" << endl;
+      out << "Xnml as schedules: " << endl;
+
+      for(int n=0; n < sp->N(); n++)
+	{
+	  cout << "schedule for job " << n+1 << ": {";
+
+	  int M = sp->J()->at(n)->getL()->size();
+	  cout << "(" << M << ") ";
+	  for(int m = 0; m < M; m++)
+	    {
+	      for(int l=0; l < sp->L(); l++)
+		{
+		  if( Xnml[n][m][l] == 1)
+		    {
+		      cout << l << " ";
+		    }
+		} // end l
+	    } // end m
+	  cout << "}" << endl;
+	} // end n
+
+
       // printing Xnt in the format of a *.map file. It can be copy-pasted as a map file for further use (input to remapping or visualization)
       // out << endl;
       // out << mp->N() << endl;

@@ -631,7 +631,7 @@ double evaluateCostForLees(vector<Signal<int>*>& S, vector<Task*>& J)
 	delete P_tot;
 	return pmax;
 }
-#endif
+
 //===================================================================================================
 // Sorting functions for task sets!
 
@@ -658,3 +658,4 @@ bool sortTasksViaPreemption(Task* J1, Task* J2)
 }
 //==================================================================================================
 
+#endif
