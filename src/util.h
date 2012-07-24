@@ -578,7 +578,7 @@ Signal<int>* getNonPreemptiveSchedule(Task& task, int startTime, int schedulesLe
 	  //alttaki 2 satir anlama amaciyla yazildi
 //	  cout<< "simdi con2->print calisiyor"<<endl;
 
-	  con2->print();
+	  // con2->print();
 
 	  return con2;
 }

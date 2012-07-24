@@ -383,7 +383,7 @@ npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>
             allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H,
                 taskNumber + 1);
 
-          // TODO: fix memory leakage
+          // DONE: fix memory leakage
           vector<Signal<int>*>::iterator it = tab.end();
           it--;
           delete (*it);

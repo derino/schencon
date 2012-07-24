@@ -96,13 +96,18 @@ int main()
 	vector<Signal<int>*> emptyTab;
 	sp->setPMax( sp->PMaxHigh() );
 	
-	// Cost minimization greedy 
-	allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+	// C-NP_FTS-P_PminH: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+	// TODO: Sort jobs by Energy / (TODO for later: by Peak values)
+	allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+	// C-NP_PminH-P_PminH: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+	// TODO: Sort jobs by Energy / (TODO for later: by Peak values)
+	//allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+	// (Lee) P-NP_FTS-P_PtotH: Peak minimization with full tree search for NP and job pieces to min Ptot slots greedy heuristics for P jobs.
+	// TODO: sort jobs from non-preemptable to preemptable
+	//allocTab( NP_PEAK_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 	
-	// allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
-
-	// allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
-
 	/*
 	double mCost = numeric_limits<double>::max();
         // Cost minTab

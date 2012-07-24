@@ -16,6 +16,7 @@ public:
   Signal(string, T*, int);
   Signal(string, string);
   Signal(string, int, int);
+  Signal(Signal<T>&);
   virtual ~Signal();
 
   //  friend ostream& operator<< <>(ostream&, const Signal<T>&);
@@ -61,6 +62,14 @@ Signal<T>::Signal(string name, int s, int init): _name(name), _size(s)
   _value = new T[_size];
   for(int i=0; i < _size; i++)
     _value[i] = init;
+}
+
+template <typename T>
+Signal<T>::Signal(Signal<T>& s): _name(s.getName()),_size(s.size())
+{
+  _value = new T[_size];
+  for(int i=0; i < _size; i++)
+    _value[i] = s.at(i);
 }
 
 template <typename T>
