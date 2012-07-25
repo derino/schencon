@@ -50,8 +50,8 @@ ILOSTLBEGIN
 void usage( void )
 {
   puts( "Usage for ilpscheduler: ilpscheduler [--time-limit time_limit [--gap-limit gap_limit]]" );
-	/* ... */
-	exit( EXIT_FAILURE );
+  /* ... */
+  exit( EXIT_FAILURE );
 }
 
 
@@ -72,29 +72,29 @@ struct globalArgs_t {
 static const char *optString = "t:g:h?";
 
 static const struct option longOpts[] = {
-	{ "time-limit", required_argument, NULL, 't' },
-	{ "gap-limit", required_argument, NULL, 'g'},
-	{ "help", no_argument, NULL, 'h' },
-	{ NULL, no_argument, NULL, 0 }
+  { "time-limit", required_argument, NULL, 't' },
+  { "gap-limit", required_argument, NULL, 'g'},
+  { "help", no_argument, NULL, 'h' },
+  { NULL, no_argument, NULL, 0 }
 };
 
 void print_args( void )
 {
-	printf("ILPScheduler is executed with the following parameters:\n");
-	printf( "timeLimit: %f\n", globalArgs.timeLimit );
-	printf( "gapLimit: %f\n", globalArgs.gapLimit );
+  printf("ILPScheduler is executed with the following parameters:\n");
+  printf( "timeLimit: %f\n", globalArgs.timeLimit );
+  printf( "gapLimit: %f\n", globalArgs.gapLimit );
 }
 
 bool verify_args()
 {
-	bool proper = true;
-	if (globalArgs.gapLimit != 100 && globalArgs.timeLimit == -1)
-	{
-		cout << "Error: Specify either only time limit or both time limit and gap limit. e.g., -t 1 OR -t 1 -g 10" << endl;
-		return false;
-	}
+  bool proper = true;
+  if (globalArgs.gapLimit != 100 && globalArgs.timeLimit == -1)
+    {
+      cout << "Error: Specify either only time limit or both time limit and gap limit. e.g., -t 1 OR -t 1 -g 10" << endl;
+      return false;
+    }
 
-	return proper;
+  return proper;
 
 }
 
@@ -162,47 +162,47 @@ void execute () // old main
 
 int main( int argc, char *argv[] )
 {
-	int opt = 0;
-	int longIndex = 0;
+  int opt = 0;
+  int longIndex = 0;
 	
-	/* Initialize globalArgs before we get to work. */
-	globalArgs.timeLimit = -1;
-	globalArgs.gapLimit = 100;
+  /* Initialize globalArgs before we get to work. */
+  globalArgs.timeLimit = -1;
+  globalArgs.gapLimit = 100;
 	
-	/* Process the arguments with getopt_long(), then 
-	 * populate globalArgs. 
-	 */
-	opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
-	while( opt != -1 ) {
-	  switch( opt ) {
-	  case 't':
-	    globalArgs.timeLimit = atof(optarg);
-	    break;
-	  case 'g':
-	    globalArgs.gapLimit = atof(optarg);
-	    break;
-	  case 'h':	/* fall-through is intentional */
-	  case '?':
-	    usage();
-	    break;
+  /* Process the arguments with getopt_long(), then 
+   * populate globalArgs. 
+   */
+  opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
+  while( opt != -1 ) {
+    switch( opt ) {
+    case 't':
+      globalArgs.timeLimit = atof(optarg);
+      break;
+    case 'g':
+      globalArgs.gapLimit = atof(optarg);
+      break;
+    case 'h':	/* fall-through is intentional */
+    case '?':
+      usage();
+      break;
 	    	    
-	  default:	    /* You won't actually get here. */
-	    break;
-	  }
+    default:	    /* You won't actually get here. */
+      break;
+    }
 	  
-	  opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
-	}
+    opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
+  }
 
-	if( !verify_args() )
-	{
-		usage();
-		return EXIT_FAILURE;
-	}
+  if( !verify_args() )
+    {
+      usage();
+      return EXIT_FAILURE;
+    }
 
-	print_args();
+  print_args();
 	
-	execute();
+  execute();
 
-	return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
 
