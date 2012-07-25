@@ -13,10 +13,10 @@
 #include "SchedulingMOMHSolution.hpp"
 
 
-enum NPHeuristicType {NP_COST_MIN_WITH_TREE_SEARCH=0, NP_COST_MIN_WITH_GREEDY_SEARCH, NP_PEAK_MIN_WITH_TREE_SEARCH}; // NP_ASAP
+enum NPHeuristicType {NP_COST_MIN_WITH_TREE_SEARCH=0, NP_COST_MIN_WITH_GREEDY_SEARCH, NP_PEAK_MIN_WITH_TREE_SEARCH, NP_ASAP_SCHEDULING};
 
-enum PHeuristicType {P_PEAK_MINIMIZATION=0, P_COST_MINIMIZATION /*p_max aware cost minimization*/,
-  P_PMAX_AWARE/*doesn't care about cost minimization*/}; // P_ASAP
+enum PHeuristicType {P_PEAK_MINIMIZATION=0, P_COST_MINIMIZATION, P_ASAP_SCHEDULING /*p_max aware cost minimization*/,
+  P_PMAX_AWARE/*doesn't care about cost minimization*/};
 
 
 
@@ -40,9 +40,16 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
     double P_max, Signal<double>& p_min, Signal<double>& P_H, int taskNumber);
 
 
+void
+ASAPScheduling(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
+    TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min, Signal<double>& P_H, int taskNumber);
 
 
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
 void
 allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
@@ -56,22 +63,33 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
     {
       // cout << "no more tasks so we have reached to the leaf!!" << endl;
       // Reached leaf
-      // calculate cost, compare with minimum cost
-      double cost = evaluateCost(inputTab, J, P_max, p_min, P_H);
-      // cout << "Cost for this tree path: " << cost << endl;
+      double cost, peak;
 
-      double peak = evaluateCostForLees(inputTab, J);
+      if (isConstraintSatisfied(inputTab, J, P_max))
+	{
+	  // calculate cost, compare with minimum cost
+	  cost = evaluateCost(inputTab, J, P_max, p_min, P_H);
+	  // cout << "Cost for this tree path: " << cost << endl;
+	  
+	  peak = evaluateCostForLees(inputTab, J);
+	}
+      else // !(isConstaintSatisfied)
+	{
+	  cost = numeric_limits<double>::max();
+	  peak = numeric_limits<double>::max();
+	}
+      
       //TODO:add tab to SchedulingMOMHSolution
-
+	  
       vector<Signal<int>*>* tab = new vector<Signal<int>*>();
       for ( vector<Signal<int>*>::iterator it = inputTab.begin(); it != inputTab.end(); it++)
-        {
-          Signal<int>* sit = *it;
-          Signal<int>* sitCopy = new Signal<int>(*sit);
-          tab->push_back(sitCopy);
-        }
-//      vector<Signal<int>*>* tab = new vector<Signal<int>*>(inputTab);
-
+	{
+	  Signal<int>* sit = *it;
+	  Signal<int>* sitCopy = new Signal<int>(*sit);
+	  tab->push_back(sitCopy);
+	}
+      // vector<Signal<int>*>* tab = new vector<Signal<int>*>(inputTab);
+	  
       SchedulingMOMHSolution* sol = new SchedulingMOMHSolution(peak, cost);
       sol->setTab(tab);
       if ( pNondominatedSet->Update(*sol) == true )
@@ -80,10 +98,9 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
 	delete sol; // because a copy is made inside Update if the solution is added.
       }
       else
-        delete sol;
-
+	delete sol;
       return;
-    }
+    } // END of leaf
 
   Task* task = J[taskNumber];
     // TODO: cout << task->getName() << endl; bunu koyarken "endl'i sil "moving to following task -"...daki..
@@ -100,6 +117,10 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
         pCostMinimization(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max,
             p_min, P_H, taskNumber);
         break;
+      case P_ASAP_SCHEDULING:
+        ASAPScheduling(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max, p_min,
+            P_H, taskNumber);
+	break;
       default:
         cout << "ERROR: undefined heuristic type!" << endl;
         break;
@@ -122,6 +143,10 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
       case NP_COST_MIN_WITH_GREEDY_SEARCH:
         npCostMinWithGreedySearch(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max, p_min,
             P_H, taskNumber);
+	break;
+      case NP_ASAP_SCHEDULING:
+        ASAPScheduling(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max, p_min,
+            P_H, taskNumber);
         break;
       default:
         cout << "ERROR: undefined heuristic type!" << endl;
@@ -132,6 +157,10 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
 
 }
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
 //>>>>>>>>>>>>>Lee's Preemptable Scheduling<<<<<<<<<<<<<<<<<
 void
 pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
@@ -210,6 +239,40 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////
+//ASAP scheduling
+void
+ASAPScheduling(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
+    TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min, Signal<double>& P_H, int taskNumber)
+{
+  Task* task = J[taskNumber];
+  int schedulesLength = p_min.size();
+
+  vector<Signal<int>*> tab(inputTab);
+
+  Signal<int>* scheduleForArrivalTime = getNonPreemptiveSchedule(*task, task->getA(), schedulesLength);
+
+  tab.push_back(scheduleForArrivalTime);
+
+  if (isConstraintSatisfied(tab, J, P_max))
+        {
+	  allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H, taskNumber + 1);
+
+          // TODO: fix memory leakage
+          vector<Signal<int>*>::iterator it = tab.end();
+          it--;
+          delete (*it);
+          tab.pop_back();
+        }
+}
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
 void
 pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
@@ -220,7 +283,14 @@ pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 
   //vector<Signal<int>*> tab(inputTab);
 
-  Signal<double>* P_tot = P__tot2(inputTab, J);
+  //cout << ">>>>>>>> tab:" << endl;
+  //printTab(inputTab);
+  //cout << ">>>>>>>> task size:" << J.size() << endl;
+  Signal<double>* P_tot;
+  if(inputTab.size() == 0)
+    P_tot = new Signal<double>("all 0s", schedulesLength, 0);
+  else
+    P_tot = P__tot2(inputTab, J);
 
   // sort task parts ...
   vector<Pair> vTaskParts;
@@ -338,6 +408,12 @@ pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 }
 
 
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
 void
 npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
@@ -401,6 +477,10 @@ npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>
 }
 
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
 void
 npCostMinWithGreedySearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,

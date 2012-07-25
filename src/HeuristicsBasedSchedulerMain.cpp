@@ -98,11 +98,14 @@ int main()
 	
 	// C-NP_FTS-P_PminH: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
 	// TODO: Sort jobs by Energy / (TODO for later: by Peak values)
-	allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+	//allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+	// ASAP Scheduling
+	//allocTab( NP_ASAP_SCHEDULING, P_ASAP_SCHEDULING, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 
 	// C-NP_PminH-P_PminH: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
 	// TODO: Sort jobs by Energy / (TODO for later: by Peak values)
-	//allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+	allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 
 	// (Lee) P-NP_FTS-P_PtotH: Peak minimization with full tree search for NP and job pieces to min Ptot slots greedy heuristics for P jobs.
 	// TODO: sort jobs from non-preemptable to preemptable
@@ -116,7 +119,9 @@ int main()
         // Peak minTab 
         vector<Signal<int>*>* minCostTab = NULL;
 	*/
-        
+        if (pNondominatedSet->iSetSize == 0)
+	  cout << "No feasible schedule found!" << endl;
+	
 	for(std::vector<TSolution*>::iterator it=pNondominatedSet->begin(); it != pNondominatedSet->end(); it++)
         {
           SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;

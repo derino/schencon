@@ -20,7 +20,7 @@ using namespace std;
 
 // Global Variables
 
-int L = 96;
+int L = 48;
 
 
 float rand01()
@@ -64,7 +64,7 @@ Task* createTask(int i, bool preemptable, float par)
 
   // - set task's deadline
   // Task period
-  int tp = 2 + rand() % 22;
+  int tp = 1 + rand() % 11;
 
   //  Max # of repeating periods = maxR
   int maxR = L/tp; // floor of the division. not necessary due to dividing two ints.
