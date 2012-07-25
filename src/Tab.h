@@ -48,7 +48,8 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
     Signal<double>& P_H, int taskNumber = 0)
 {
-
+  if(taskNumber < 8)
+    cout << "task number: " << taskNumber << endl;
 
 
   if (taskNumber == (signed) J.size())
@@ -75,7 +76,8 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
       sol->setTab(tab);
       if ( pNondominatedSet->Update(*sol) == true )
       {
-	//cout << "new pareto point" << endl;
+	//cout << "#paretos:" << pNondominatedSet->iSetSize << endl;
+	delete sol; // because a copy is made inside Update if the solution is added.
       }
       else
         delete sol;

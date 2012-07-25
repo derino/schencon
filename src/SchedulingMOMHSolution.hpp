@@ -5,18 +5,19 @@
 //#include <iomanip>
 
 #include <momh/momhconstrainedsolution.h>
-//#include "Signal.h"
+#include "Signal.h"
 #include <vector>
 
 using namespace std;
 
-template <typename T >
-class Signal;
+//template <typename T >
+//class Signal;
 
 class SchedulingMOMHSolution : public TDPAMConstrainedSolution/*TMOMHSolution*/
 {
  public:
 	SchedulingMOMHSolution(double peak, double cost);
+	SchedulingMOMHSolution(SchedulingMOMHSolution&);
 	~SchedulingMOMHSolution();
 
 //	SchedulingMOMHSolution(SchedulingingMOMHSolution& schedulingMOMHSolution);

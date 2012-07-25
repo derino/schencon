@@ -75,7 +75,7 @@ Signal<T>::Signal(Signal<T>& s): _name(s.getName()),_size(s.size())
 template <typename T>
 Signal<T>::~Signal()
 {
-  delete _value;
+  delete[] _value;
 }
 
 template <typename T>

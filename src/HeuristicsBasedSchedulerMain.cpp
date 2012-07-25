@@ -147,7 +147,14 @@ int main()
           delete msIt;
         }
 
+	// delete solutions. not needed because delete msIt above already deletes them.
+	// pNondominatedSet->DeleteAll();
+	
         delete pNondominatedSet;
+
+	// delete problem and problem reader
+	delete sp;
+	delete spr;
 
 
 //        cout << "Minimum cost is " << minCost << endl;

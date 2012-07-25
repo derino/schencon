@@ -48,6 +48,18 @@ SchedulingMOMHSolution::SchedulingMOMHSolution(double peak, double cost) : TDPAM
 
 }
 
+SchedulingMOMHSolution::SchedulingMOMHSolution(SchedulingMOMHSolution& ss): TDPAMConstrainedSolution(ss)
+{
+  _peak = ss.getPeak();
+  _cost = ss.getCost();
+  _tab = new vector<Signal<int>*>();
+  for( vector<Signal<int>*>::iterator it = ss.getTab()->begin(); it != ss.getTab()->end(); it++)
+    {
+      Signal<int>* s = new Signal<int>( *(*it) );
+      _tab->push_back(s);
+    }
+}
+
 SchedulingMOMHSolution::~SchedulingMOMHSolution()
 {
   for(vector<Signal<int>*>::iterator it = _tab->begin(); it != _tab->end(); it++)

@@ -48,6 +48,7 @@ class SchedulingProblem
 {
  public:
   SchedulingProblem();
+  virtual ~SchedulingProblem();
   string name();
   void write(/*string filename*/);
   void print();

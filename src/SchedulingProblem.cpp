@@ -38,6 +38,17 @@ SchedulingProblem::SchedulingProblem()
 {
 }
 
+SchedulingProblem::~SchedulingProblem()
+{
+  delete _pMin;
+  delete _PH;
+  for( vector<Task*>::iterator it = _J.begin(); it != _J.end(); it++)
+    {
+      delete (*it);
+    }
+}
+
+
 Signal<double>* SchedulingProblem::pMin()
 {
   return _pMin;
