@@ -61,6 +61,14 @@ SchedulingProblem* SchedulingProblemReader::read()
   int L = -1;
   fin >> L;
   sp->setL(L);
+  // - read LPAR (ratio of tasks with low PAR value in the task set)
+  double lpar = -1;
+  fin >> lpar;
+  sp->setLPAR(lpar);
+  // - read PrR (ratio of preemptable tasks in the task set)
+  double prr = -1;
+  fin >> prr;
+  sp->setPrR(prr);
   fin.close();
 
   // set PH as all zeros

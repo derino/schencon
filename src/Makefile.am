@@ -67,16 +67,23 @@ heursec_SOURCES = HeuristicsBasedSchedulerMain.cpp \
 		  SchedulingProblem.cpp \
 		  SchedulingProblemReader.h \
 		  SchedulingProblemReader.cpp \
-		  MOS.h \
 		  SchedulingMOMHSolution.hpp \
 		  SchedulingMOMHSolution.cpp \
 		  Signal.h \
 		  Tab.h \
 		  Task.h \
 		  Task.cpp \
-		  util.h
+		  util.h \
+		  ILPScheduler.cpp \
+		  ILPScheduler.h \
+		  InfeasibleSolutionException.h \
+		  SchedulingSolutionStatusAdapter.h \
+		  SchedulingSolution.h \
+		  SchedulingSolution.cpp \
+		  SchedulingProblemResult.h \
+		  SchedulingProblemResult.cpp 
 
-heursec_LDADD = $(LIBMOMH_LIBS)
+heursec_LDADD = $(LIBMOMH_LIBS) $(LDADD)
 
 heursec_CXXFLAGS = $(LIBMOMH_CFLAGS)
 

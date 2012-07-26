@@ -133,6 +133,7 @@ void execute () // old main
   SchedulingProblemReader* spr = new SchedulingProblemReader();
   SchedulingProblem* sp = NULL;
   sp = spr->read();
+  sp->setPMax( sp->PMaxLow() );
   sp->print();
 
   // Solve the problem

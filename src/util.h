@@ -591,6 +591,19 @@ void printTab( vector<Signal<int>*>& S)
     }
 }
 
+void printSchedule(ostream& out, vector<Task*>& J, vector<Signal<int>*>& S)
+{
+  assert(J.size() == S.size());
+  vector<Task*>::iterator jit = J.begin();
+  for( vector<Signal<int>*>::iterator it = S.begin(); it != S.end(); it++ )
+    {
+      out << (*jit)->getName() << ": ";
+      (*it)->printAsArray(out);
+      jit++;
+    }
+}
+
+
 bool isConstraintSatisfied(vector<Signal<int>*>& S, vector<Task*>& J, double P_max) {
 	//We apply CheckConstraint here to speed up the search procedure with pruning the unnecessary
 	//search tree expansion. (i.e. a task with a deadline already violated. There is no need to continue scheduling)
@@ -632,7 +645,7 @@ double evaluateCostForLees(vector<Signal<int>*>& S, vector<Task*>& J)
 	return pmax;
 }
 
-//===================================================================================================
+//========================================================================
 // Sorting functions for task sets!
 
 bool sortTasksViaEnergy(Task* J1, Task* J2)
@@ -642,20 +655,28 @@ bool sortTasksViaEnergy(Task* J1, Task* J2)
 
 bool sortTasksViaPeakValue(Task* J1, Task* J2)
 {
-	return (max(*(J1->getL())) > max(*(J2->getL())));
+  return (max(*(J1->getL())) > max(*(J2->getL())));
 }
 
 bool sortTasksViaPreemption(Task* J1, Task* J2)
 {
-	if(J1->getPr() == true && J2->getPr() == false)
-		return false;
-	else if(J1->getPr() == false && J2->getPr() == true)
-		return true;
-//	else if(J1->getPr() == false && J2->getPr() == false)
-//		return true;
-//	else if(J1->getPr() == true && J2->getPr() == true)
-//		return true;
+  return J1->getPr() < J2->getPr();
 }
-//==================================================================================================
+
+/** TODO: Think about this. Sorts first wrt preemptability, then if same, wrt Peak */
+bool sortTasksViaPreemptionAndPeak(Task* J1, Task* J2)
+{
+  bool res;
+  if ( J1->getPr() < J2->getPr() )
+    return true;
+  else if ( J1->getPr() > J2->getPr() )
+    return false;
+  else // J1->getPr() = J2->getPr()
+    {
+      return (max(*(J1->getL())) > max(*(J2->getL())));
+    }
+}
+
+//=========================================================================
 
 #endif

@@ -227,17 +227,17 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
     }
     catch (IloException& e) {
       cerr << "Concert exception caught: " << e << endl;
-//      ms = new MappingSolution(mp);
-//      ms->setStatus(ERROR_SOLUTION/*IloAlgorithm::Error*/);
+      ss = new SchedulingSolution(sp);
+      ss->setStatus(ERROR_SOLUTION/*IloAlgorithm::Error*/);
     }
     catch (InfeasibleSolutionException& ise) {
-	cerr << "TODO" << endl;
-//        ms = ise.getMappingSolution();
+      cerr << "Infeasible solution!" << endl;
+      ss = ise.getSchedulingSolution();
       }
     catch (...) {
       cerr << "Unknown exception caught" << endl;
-//      ms = new MappingSolution(mp);
-//      ms->setStatus(ERROR_SOLUTION/*IloAlgorithm::Error*/);
+      ss = new SchedulingSolution(sp);
+      ss->setStatus(ERROR_SOLUTION/*IloAlgorithm::Error*/);
     }
     
     env.end();
@@ -306,7 +306,7 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
 //   //cout /*env.out()*/ << "Solution status = " << cplex.getStatus() << endl;
    ss->setStatus( schedulingSolutionStatusAdapter(cplex.getStatus()) );
 //   //env.out() << "Solution value  = " << cplex.getObjValue() << endl;
-   cout << "Min. obj. value: " << cplex.getObjValue() << endl;
+   //cout << "Min. obj. value: " << cplex.getObjValue() << endl;
 
 //   /* Not needed anymore. Cost values are calculated by using the X and Y solution values inside MappingSolution class.
    // if(oType == PEAK)

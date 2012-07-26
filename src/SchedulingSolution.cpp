@@ -204,7 +204,7 @@ std::ostream& operator<<(std::ostream& os, SchedulingSolution& ss)
 
 void SchedulingSolution::print(ostream& out)
 {
-  out << "Solution status = " << status << endl;
+  //  out << "Solution status = " << status << endl;
   if (status == OPTIMAL_SOLUTION/*IloAlgorithm::Optimal*/ || status == FEASIBLE_SOLUTION)
     {
       out << "cost  = " << getCost() << endl;
@@ -214,21 +214,21 @@ void SchedulingSolution::print(ostream& out)
 
       for(int n=0; n < sp->N(); n++)
 	{
-	  cout << "schedule for job " << n+1 << ": {";
+	  out << "schedule for job " << n+1 << ": {";
 
 	  int M = sp->J()->at(n)->getL()->size();
-	  cout << "(" << M << ") ";
+	  out << "(" << M << ") ";
 	  for(int m = 0; m < M; m++)
 	    {
 	      for(int l=0; l < sp->L(); l++)
 		{
 		  if( Xnml[n][m][l] == 1)
 		    {
-		      cout /*<< "(" << n << "," << m << "," << l << ")"*/ << l << " ";
+		      out /*<< "(" << n << "," << m << "," << l << ")"*/ << l << " ";
 		    }
 		} // end l
 	    } // end m
-	  cout << "}" << endl;
+	  out << "}" << endl;
 	} // end n
 
 

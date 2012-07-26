@@ -34,7 +34,8 @@ public:
 
   void readFromFile(string);
   void print();
-  ostream& print(ostream&);
+  void print(ostream&);
+  void printAsArray(ostream&);
   void printIntoMatFile();
   void printIntoFile(); // for gnuplot
 
@@ -79,14 +80,14 @@ Signal<T>::~Signal()
 }
 
 template <typename T>
-ostream& Signal<T>::print(ostream& out)
+void Signal<T>::print(ostream& out)
 {
   //  assert(fout.is_open());
   int i;
   for(i=0; i<_size; i++ )
     out << i << " " <<  _value[i] << endl;
   out << i << " " << 0 << endl;
-  return out;
+  //return out;
 }
 
 template <typename T>
@@ -272,6 +273,15 @@ void Signal<T>::readFromFile(string fileName)
   //return new Signal<T>(res, endTime);
   _value = res;
   _size = endTime;
+}
+
+template <typename T>
+void Signal<T>::printAsArray(ostream& out)
+{
+  out << _name << ": " << endl << "[";
+  for(int i=0; i<_size-1; i++ )
+    out << _value[i] << ", ";
+  out << _value[_size-1] << "]" << endl;
 }
 
 template <typename T>

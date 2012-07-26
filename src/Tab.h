@@ -55,8 +55,8 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
     Signal<double>& P_H, int taskNumber = 0)
 {
-  if(taskNumber < 8)
-    cout << "task number: " << taskNumber << endl;
+  //  if(taskNumber < 8)
+  //    cout << "task number: " << taskNumber << endl;
 
 
   if (taskNumber == (signed) J.size())
@@ -75,6 +75,7 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
 	}
       else // !(isConstaintSatisfied)
 	{
+	  return; // TODO why didn't we put this return before?!?!
 	  cost = numeric_limits<double>::max();
 	  peak = numeric_limits<double>::max();
 	}
@@ -172,8 +173,11 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 
   //If this task is the FIRST processed PR task then we have to create tab
   //vector<Signal<int>*> tab(inputTab);
-
-  Signal<double>* P_tot = P__tot2(inputTab, J);
+  Signal<double>* P_tot;
+  if(inputTab.size() == 0)
+    P_tot = new Signal<double>("all 0s", schedulesLength, 0);
+  else
+    P_tot = P__tot2(inputTab, J);
 
   // we may print the tot here.
   //P_tot->print();
@@ -220,9 +224,9 @@ pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
       schedulesLength);
 
   inputTab.push_back(s);
-  cout << "hey!" << endl;
-  printTab(inputTab);
-  cout << "hey 2 !" << endl;
+  // cout << "hey!" << endl;
+  // printTab(inputTab);
+  // cout << "hey 2 !" << endl;
   allocTab(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max, p_min, P_H, taskNumber + 1);
 
   // TODO: fix memory leakage
