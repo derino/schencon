@@ -52,6 +52,7 @@ class SchedulingProblem
   string name();
   void write(/*string filename*/);
   void print();
+  void print(ostream&);
 
   int N();
   void setN(int); // #tasks

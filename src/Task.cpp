@@ -103,9 +103,14 @@ void Task::setL(Signal<double>* L)
 
 void Task::print()
 {
-  cout << "Name: " << _name << endl;
-  cout << "a: " << _a << endl;
-  cout << "d: " << _d << endl;
-  cout << "pr: " << _pr << endl;
-  _L->print();
+  print(cout);
+}
+
+void Task::print(ostream& out)
+{
+  out << "Name: " << _name << endl;
+  out << "a: " << _a << endl;
+  out << "d: " << _d << endl;
+  out << "pr: " << _pr << endl;
+  _L->printAsArray(out);
 }

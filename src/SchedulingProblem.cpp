@@ -154,21 +154,25 @@ string SchedulingProblem::name()
 
 void SchedulingProblem::print()
 {
+  print(cout);
+}
 
+void SchedulingProblem::print(ostream& out)
+{
   // print problem name
-  cout << name() << endl;
+  out << name() << endl;
 
   // print P_max
-  cout << "P_max:" << endl;
-  cout << _PMax << endl;
+  out << "P_max:" << endl;
+  out << _PMax << endl;
 
   // print p_min
-  _pMin->print();
+  _pMin->printAsArray(out);
 
   for(int i=0; i< _J.size(); i++)
     {
-      cout << "TASK" << endl;
-      _J.at(i)->print();
+      out << "TASK" << endl;
+      _J.at(i)->print(out);
     }
 }
 

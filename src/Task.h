@@ -28,6 +28,7 @@ public:
   Signal<double>* getL();
   void setL(Signal<double>*);
   void print();
+  void print(ostream&);
 
 private:
   string _name;

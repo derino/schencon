@@ -24,8 +24,140 @@ using namespace std;
 #include "ILPScheduler.h"
 #include "SchedulingProblemResult.h"
 
+//#define L 20
+
 int main()
 {
+
+  /** Test with given schedules
+  double l_j1[4]  = {0.617624, 0.737464, 0.617624, 0.497784};
+  double l_j2[18] = {0.957563, 1.050510, 0.864621, 0.957563, 1.050510, 0.864621, 0.957563, 1.050510, 0.864621, 0.957563, 1.050510, 0.864621, 0.957563, 1.050510, 0.864621, 0.957563, 1.050510, 0.864621};
+  double l_j3[10] = {1.17185, 1.17185, 1.17185, 1.17185, 1.17185, 1.17185, 1.17185, 1.17185, 1.17185, 1.17185};
+  double l_j4[15] = {1.23139, 1.25285, 1.20993, 1.23139, 1.25285, 1.20993, 1.23139, 1.25285, 1.20993, 1.23139, 1.25285, 1.20993, 1.23139, 1.25285, 1.20993};
+  double l_j5[4]  = {1.43065, 1.43065, 1.43065, 1.43065};
+  double l_j6[12]  = {0.883876, 0.891267, 0.876485, 0.883876, 0.891267, 0.876485, 0.883876, 0.891267, 0.876485, 0.883876, 0.891267, 0.876485};
+  double l_j7[1] = {1.20987};
+  double l_j8[16]  = {1.19792, 1.28938, 1.19792, 1.10647, 1.19792, 1.28938, 1.19792, 1.10647, 1.19792, 1.28938, 1.19792, 1.10647, 1.19792, 1.28938, 1.19792, 1.10647};
+  double l_j9[6] = {1.31315, 1.41079, 1.2155, 1.31315, 1.41079, 1.2155};
+  double l_j10[20] = {1.04765, 1.19587, 1.13925, 0.956042, 0.899427, 1.04765, 1.19587, 1.13925, 0.956042, 0.899427, 1.04765, 1.19587, 1.13925, 0.956042, 0.899427, 1.04765, 1.19587, 1.13925, 0.956042, 0.899427};
+
+  Signal<double> l1("l1", l_j1, L);
+  Signal<double> l2("l2", l_j2, L);
+  Signal<double> l3("l3", l_j3, L);
+  Signal<double> l4("l4", l_j4, L);
+  Signal<double> l5("l5", l_j5, L);
+  Signal<double> l6("l6", l_j6, L);
+  Signal<double> l7("l7", l_j7, L);
+  Signal<double> l8("l8", l_j8, L);
+  Signal<double> l9("l9", l_j9, L);
+  Signal<double> l10("l10", l_j10, L);
+
+  // ilp schedule
+  int s_ilp_j1[L] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0};
+  int s_ilp_j2[L] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0};
+  int s_ilp_j3[L] = {1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ilp_j4[L] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0};
+  int s_ilp_j5[L] = {1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ilp_j6[L] = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0};
+  int s_ilp_j7[L] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ilp_j8[L] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0};
+  int s_ilp_j9[L] = {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ilp_j10[L]= {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+  Signal<int> s1("j1", s_ilp_j1, L);
+  Signal<int> s2("j2", s_ilp_j2, L);
+  Signal<int> s3("j3", s_ilp_j3, L);
+  Signal<int> s4("j4", s_ilp_j4, L);
+  Signal<int> s5("j5", s_ilp_j5, L);
+  Signal<int> s6("j6", s_ilp_j6, L);
+  Signal<int> s7("j7", s_ilp_j7, L);
+  Signal<int> s8("j8", s_ilp_j8, L);
+  Signal<int> s9("j9", s_ilp_j9, L);
+  Signal<int> s10("j10", s_ilp_j10, L);
+
+
+  // FTSG Pmax=ILP schedule
+  int s_ftsg2_j1[L] = {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ftsg2_j2[L] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0};
+  int s_ftsg2_j3[L] = {1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ftsg2_j4[L] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0};
+  int s_ftsg2_j5[L] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ftsg2_j6[L] = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0};
+  int s_ftsg2_j7[L] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ftsg2_j8[L] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0};
+  int s_ftsg2_j9[L] = {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  int s_ftsg2_j10[L]= {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+  Signal<int> ss1("j1", s_ftsg2_j1, L);
+  Signal<int> ss2("j2", s_ftsg2_j2, L);
+  Signal<int> ss3("j3", s_ftsg2_j3, L);
+  Signal<int> ss4("j4", s_ftsg2_j4, L);
+  Signal<int> ss5("j5", s_ftsg2_j5, L);
+  Signal<int> ss6("j6", s_ftsg2_j6, L);
+  Signal<int> ss7("j7", s_ftsg2_j7, L);
+  Signal<int> ss8("j8", s_ftsg2_j8, L);
+  Signal<int> ss9("j9", s_ftsg2_j9, L);
+  Signal<int> ss10("j10", s_ftsg2_j10, L);
+
+
+  // ILP Ptot calc.
+  Signal<double>* P_1 = P_i(&l1, &s1);
+  Signal<double>* P_2 = P_i(&l2, &s2);
+  Signal<double>* P_3 = P_i(&l3, &s3);
+  Signal<double>* P_4 = P_i(&l4, &s4);
+  Signal<double>* P_5 = P_i(&l5, &s5);
+  Signal<double>* P_6 = P_i(&l6, &s6);
+  Signal<double>* P_7 = P_i(&l7, &s7);
+  Signal<double>* P_8 = P_i(&l8, &s8);
+  Signal<double>* P_9 = P_i(&l9, &s9);
+  Signal<double>* P_10 = P_i(&l10, &s10);
+
+  Signal<double>* P_0 = new Signal<double>("all 0s", L, 0);
+  Signal<double>* P_tot = P_0;
+  P_tot = *P_tot + *P_1;
+  P_tot = *P_tot + *P_2;
+  P_tot = *P_tot + *P_3;
+  P_tot = *P_tot + *P_4;
+  P_tot = *P_tot + *P_5;
+  P_tot = *P_tot + *P_6;
+  P_tot = *P_tot + *P_7;
+  P_tot = *P_tot + *P_8;
+  P_tot = *P_tot + *P_9;
+  P_tot = *P_tot + *P_10;
+  cout << max(*P_tot) << endl;
+
+
+  // FTSG Pmax=ILP Ptot calc.
+  Signal<double>* PP_1 = P_i(&l1, &ss1);
+  Signal<double>* PP_2 = P_i(&l2, &ss2);
+  Signal<double>* PP_3 = P_i(&l3, &ss3);
+  Signal<double>* PP_4 = P_i(&l4, &ss4);
+  Signal<double>* PP_5 = P_i(&l5, &ss5);
+  Signal<double>* PP_6 = P_i(&l6, &ss6);
+  Signal<double>* PP_7 = P_i(&l7, &ss7);
+  Signal<double>* PP_8 = P_i(&l8, &ss8);
+  Signal<double>* PP_9 = P_i(&l9, &ss9);
+  Signal<double>* PP_10 = P_i(&l10, &ss10);
+
+  Signal<double>* PP_0 = new Signal<double>("all 0s", L, 0);
+  Signal<double>* PP_tot = PP_0;
+  PP_tot = *PP_tot + *PP_1;
+  PP_tot = *PP_tot + *PP_2;
+  PP_tot = *PP_tot + *PP_3;
+  PP_tot = *PP_tot + *PP_4;
+  PP_tot = *PP_tot + *PP_5;
+  PP_tot = *PP_tot + *PP_6;
+  PP_tot = *PP_tot + *PP_7;
+  PP_tot = *PP_tot + *PP_8;
+  PP_tot = *PP_tot + *PP_9;
+  PP_tot = *PP_tot + *PP_10;
+  cout << max(*PP_tot) << endl;
+
+  PP_tot->printAsArray(cout);
+
+  return 0;
+*/
+
   //>>>>>>>>>>>>>>Sorting Tasks<<<<<<<<<<<<<<<<<//
   //TODO:sorting
   //	int a = 0;
@@ -86,6 +218,7 @@ int main()
 
   // solution-details.txt stores the details of solutions, e.g. schedules
   ofstream foutRes("solution-peak-minimization-details.txt");
+  sp->print(foutRes);
 
   // STEP 1
   // - First find optimum minimum peak without Pmax constraint by ILP

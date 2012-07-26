@@ -290,6 +290,8 @@ pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
   //cout << ">>>>>>>> tab:" << endl;
   //printTab(inputTab);
   //cout << ">>>>>>>> task size:" << J.size() << endl;
+
+  // if inputTab is empty, initialize P_tot as zero signal.
   Signal<double>* P_tot;
   if(inputTab.size() == 0)
     P_tot = new Signal<double>("all 0s", schedulesLength, 0);
