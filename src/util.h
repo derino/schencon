@@ -677,6 +677,30 @@ bool sortTasksViaPreemptionAndPeak(Task* J1, Task* J2)
     }
 }
 
+bool sortTasksViaPreemptionAndFreedom(Task* J1, Task* J2)
+{
+  bool res;
+  if ( J1->getPr() < J2->getPr() )
+    return true;
+  else if ( J1->getPr() > J2->getPr() )
+    return false;
+  else // J1->getPr() = J2->getPr()
+    {
+      int freedom1 = J1->getD() - J1->getA() - J1->getL()->size();
+      int freedom2 = J2->getD() - J2->getA() - J2->getL()->size();
+      return (freedom1 < freedom2);
+      /* if( freedom1 < freedom2 ) */
+      /* 	return true; */
+      /* else if( freedom1 > freedom2 ) */
+      /* 	return false; */
+      /* else */
+      /* 	{ */
+	  
+      /* 	} */
+    }
+}
+
+
 //=========================================================================
 
 #endif

@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 
 #include <iostream>
 #include <stdio.h>
@@ -203,12 +203,12 @@ int main()
   sp = spr->read();
   //  sp->print();
 
-  /*
+  /*  
   // Test sorting
   sp->print();
-  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndPeak); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaPeakValue
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaPeakValue
   sp->print();
-  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndPeak); // sortTasksViaPeakValue sortTasksViaPeakValue
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPeakValue sortTasksViaPeakValue
   sp->print();
   return 0;
   */
@@ -400,7 +400,7 @@ int main()
 	
   // FTSG: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
   // Sort jobs by Energy / PeakValue / Preemption
-  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemption); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak
   sp->setPMax( pr.minPeakLee );
 
   double mPeak2 = numeric_limits<double>::max();
@@ -408,7 +408,7 @@ int main()
   vector<Signal<int>*>* minPeakTab2 = NULL;
 
   //  try {
-  allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH, *(sp->J()), emptyTab2, pNondominatedSet2, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+  allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab2, pNondominatedSet2, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
   //allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab2, pNondominatedSet2, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 	
     //double mCost = numeric_limits<double>::max();
@@ -465,7 +465,7 @@ int main()
   foutRes << endl;
 
   // delete solutions. not needed because delete msIt above already deletes them.
-  pNondominatedSet->DeleteAll();
+  pNondominatedSet2->DeleteAll();
   delete pNondominatedSet2;
   ////////////////////////////////////////////////////////////////////
   // End of FTSG - STEP 3 ////////////////////////////////////////////
@@ -513,7 +513,7 @@ int main()
   // vector<Signal<int>*>* minPeakTab3 = NULL;
 
   // //  try {
-  // allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+  // allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
   // //allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 	
   //   //double mCost = numeric_limits<double>::max();
@@ -570,7 +570,7 @@ int main()
   // foutRes << endl;
 
   // // delete solutions. not needed because delete msIt above already deletes them.
-  // pNondominatedSet->DeleteAll();
+  // pNondominatedSet3->DeleteAll();
   // delete pNondominatedSet3;
   // ////////////////////////////////////////////////////////////////////
   // // End of FTSG - STEP 4 ////////////////////////////////////////////

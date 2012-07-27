@@ -43,16 +43,22 @@ SchedulingSolution::SchedulingSolution()
 
 SchedulingSolution::~SchedulingSolution()
 {
-  // TODO
-  // if (Xnml != NULL)
-  //   {
-  //     for(int i=0; i<mp->N(); i++)
-  // 	delete[] Xnt[i];
-  //     delete[] Xnt;
-  //     Xnt = NULL;
-  //   }
-  // else
-  //   cout << "Warning: Double delete of Xnt avoided!" << endl;
+  if (Xnml != NULL)
+    {
+      for(int n=0; n<sp->N(); n++)
+	{
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m=0; m<M; m++)
+	    {
+	      delete[] Xnml[n][m];
+	    }
+	  delete Xnml[n];
+	}
+      delete[] Xnml;
+      Xnml = NULL;
+    }
+  else
+    cout << "Warning: Double delete of Xnml avoided!" << endl;
  
 }
 
@@ -138,6 +144,8 @@ double SchedulingSolution::getPeak()
   for(int l=0; l<sp->L(); l++)
     if(Ptot[l] > max)
       max = Ptot[l];
+
+  delete[] Ptot;
   return max;
 }
 

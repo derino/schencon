@@ -64,7 +64,7 @@ Task* createTask(int i, bool preemptable, float par)
 
   // - set task's deadline
   // Task period
-  int tp = 1 + rand() % 11;
+  int tp = 1 + rand() % 10;
 
   //  Max # of repeating periods = maxR
   int maxR = L/tp; // floor of the division. not necessary due to dividing two ints.
@@ -73,7 +73,7 @@ Task* createTask(int i, bool preemptable, float par)
   int R = 1 + rand() % maxR;          //gives a number in [1,maxR]
 
   // Randomly deadline assigning
-  j->setD( ((L - tp*R)*rand01()) + tp*R );
+  j->setD( ( rand()%(L - tp*R) ) + tp*R );
 
   // - set task's load profile
   //  average power of sinosoid: aS
