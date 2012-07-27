@@ -48,6 +48,10 @@ public:
   InfeasibleSolutionException(SchedulingSolution* _ss) 
     : exception(), ss(_ss)
   { }
+
+  InfeasibleSolutionException() : exception()
+  { }
+
   
   SchedulingSolution* getSchedulingSolution()
   {

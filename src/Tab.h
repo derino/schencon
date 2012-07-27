@@ -11,11 +11,11 @@
 #include <momh/tlistset.h>
 #include <momh/nondominatedset.h>
 #include "SchedulingMOMHSolution.hpp"
-
+#include "InfeasibleSolutionException.h"
 
 enum NPHeuristicType {NP_COST_MIN_WITH_TREE_SEARCH=0, NP_COST_MIN_WITH_GREEDY_SEARCH, NP_PEAK_MIN_WITH_TREE_SEARCH, NP_ASAP_SCHEDULING};
 
-enum PHeuristicType {P_PEAK_MINIMIZATION=0, P_COST_MINIMIZATION, P_ASAP_SCHEDULING /*p_max aware cost minimization*/,
+enum PHeuristicType {P_PEAK_MINIMIZATION=0, P_COST_MINIMIZATION, P_COST_MIN_WITH_TREE_SEARCH, P_ASAP_SCHEDULING /*p_max aware cost minimization*/,
   P_PMAX_AWARE/*doesn't care about cost minimization*/};
 
 
@@ -33,6 +33,13 @@ void
 pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
     TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
     Signal<double>& P_H, int taskNumber);
+
+void
+pCostMinWithTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
+    TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
+    Signal<double>& P_H, int taskNumber);
+bool scheduleTaskPart(Task* task, double P_max, Signal<double>* P_tot, vector<Pair>& vPMin, vector<Pair>& vTaskParts, vector<int>& s_task_to_fill, 
+		      Signal<int>*& sResult, int taskPartNumber);
 
 void
 pPeakMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
@@ -116,6 +123,10 @@ allocTab(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J,
         break;
       case P_COST_MINIMIZATION:
         pCostMinimization(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max,
+            p_min, P_H, taskNumber);
+        break;
+      case P_COST_MIN_WITH_TREE_SEARCH:
+        pCostMinWithTreeSearch(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max,
             p_min, P_H, taskNumber);
         break;
       case P_ASAP_SCHEDULING:
@@ -416,6 +427,275 @@ pCostMinimization(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<T
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////
+void
+pCostMinWithTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>& J, vector<Signal<int>*>& inputTab,
+    TNondominatedSet* pNondominatedSet, double P_max, Signal<double>& p_min,
+    Signal<double>& P_H, int taskNumber)
+{
+  Task* task = J[taskNumber];
+  int schedulesLength = p_min.size();
+
+  //vector<Signal<int>*> tab(inputTab);
+
+#ifdef DEBUG
+  if(taskNumber >= 6)
+    {
+      cout << ">>>>>>>> tab:" << endl;
+      printTab(inputTab);
+      cout << ">>>>>>>> task size:" << J.size() << endl;
+    }
+#endif
+
+  // if inputTab is empty, initialize P_tot as zero signal.
+  Signal<double>* P_tot;
+  if(inputTab.size() == 0)
+    P_tot = new Signal<double>("all 0s", schedulesLength, 0);
+  else
+    P_tot = P__tot2(inputTab, J);
+
+  // sort task parts ...
+  vector<Pair> vTaskParts;
+  for (int i = 0; i < task->getL()->size(); i++)
+    {
+      Pair p;
+      p.index = i;
+      p.value = (*task->getL())[i];
+      vTaskParts.push_back(p);
+    }
+
+#ifdef DEBUG
+  cout << ">>>>>>test<<<<<<" << endl;
+  for(vector<Pair>::iterator it = vTaskParts.begin(); it != vTaskParts.end(); ++it)
+    cout << "task part:" << (*it).index << " " << (*it).value << endl;
+#endif
+
+  sort(vTaskParts.begin(), vTaskParts.end(), compare);
+  reverse(vTaskParts.begin(), vTaskParts.end());
+
+#ifdef DEBUG
+  for(vector<Pair>::iterator it = vTaskParts.begin(); it != vTaskParts.end(); ++it)
+    cout << "sorted task part:" << (*it).index << " " << (*it).value << endl;
+  cout << ">>>>>/test<<<<<<" << endl;
+#endif
+
+  // sort p_min ...
+  vector<Pair> vPMin;
+  for (int i = 0; i < p_min.size(); i++)
+    {
+      Pair p;
+      p.index = i;
+      p.value = p_min[i];
+      vPMin.push_back(p);
+    }
+
+#ifdef DEBUG
+  cout << ">>>>>test<<<<<<" << endl;
+  for(vector<Pair>::iterator it = vPMin.begin(); it != vPMin.end(); ++it)
+    cout << "p_min:" << (*it).index << " " << (*it).value << endl;
+#endif
+
+  sort(vPMin.begin(), vPMin.end(), compare);
+
+#ifdef DEBUG
+  for(vector<Pair>::iterator it = vPMin.begin(); it != vPMin.end(); ++it)
+    cout << "sorted p_min:" << (*it).index << " " << (*it).value << endl;
+  cout << ">>>>>/test<<<<<<" << endl;
+#endif
+
+  //Schedule of task [-1,-1, ... ,1 ,-1, 2, -1, ...] -1:for empty slots; id: for scheluded task part id.
+  vector<int> s_task;
+  for (int i = 0; i < schedulesLength; i++)
+    {
+      s_task.push_back(-1);
+    }
+
+  // the resulting feasible schedule. to be only written by the leaf of the search tree.
+  Signal<int>* sResult;
+
+  //  for (int k = 0; k < vTaskParts.size(); k++)
+  //  {
+  bool foundFeasible = false;
+  foundFeasible = scheduleTaskPart(task, P_max, P_tot, vPMin, vTaskParts, s_task, sResult, 0); // start scheduling from first task part (index 0)
+
+
+
+
+
+  //    } // END of for all task parts
+  //  cout << "Found Schedule: ";
+  /*
+  for (unsigned int i = 0; i < s_task.size(); i++)
+    {
+      cout << s_task[i] << " ";
+    }
+  cout << endl;
+  */
+  // TODO: Exception ekle.
+
+  //int* s_values = scheduleNorm(s_task);
+  //Signal<int>* s = new Signal<int> ("s_" + task->getName(), s_values,
+  //    schedulesLength);
+
+  if(foundFeasible)
+    {
+      cout << "Schedule found!" << endl;
+#ifdef DEBUG
+      cout << "sResult: ";
+      for (unsigned int i = 0; i < sResult->size(); i++)
+	{
+	  cout << sResult->at(i) << " ";
+	}
+      cout << endl;
+#endif
+      inputTab.push_back(sResult);
+
+      // continue the outer tree search with the next task by calling allocTab if preemptable task is scheduled feasibly.
+      allocTab(npHeurType, pHeurType, J, inputTab, pNondominatedSet, P_max, p_min, P_H, taskNumber + 1);
+      // TODO: fix memory leakage
+      vector<Signal<int>*>::iterator it = inputTab.end();
+      it--;
+      delete (*it);
+      inputTab.pop_back();
+    }
+  else
+    {
+      cout << "Schedule not found! Prune outer tree search." << endl; // do not call allocTab anymore.
+      //throw InfeasibleSolutionException();
+    }
+
+  //printTab(tab);
+
+}
+
+bool scheduleTaskPart(Task* task, double P_max, Signal<double>* P_tot, vector<Pair>& vPMin, vector<Pair>& vTaskParts, vector<int>& s_task_to_fill, 
+		      Signal<int>*& sResult, int taskPartNumber)
+{
+#ifdef DEBUG
+    cout << "scheduleTaskPart is called: task=" << task->getName() << " taskPart=" << taskPartNumber << endl;
+#endif
+  vector<int> s_task(s_task_to_fill);
+  int schedulesLength = s_task.size();
+  
+#ifdef DEBUG
+  cout << "s_task: [";
+  for (unsigned int i = 0; i < s_task.size(); i++)
+    {
+      cout << s_task[i] << " ";
+    }
+  cout << "]" << endl;
+#endif
+  
+  // check if all task parts are scheduled.
+  if( taskPartNumber == vTaskParts.size() )
+    {
+      // check if Ptot <= Pmax given s_task of the preemptable task and Ptot of all other scheduled tasks
+      // if true, return true, else return false.
+      int* s_values = scheduleNorm(s_task);
+      Signal<int>* s = new Signal<int> ("s_" + task->getName(), s_values, schedulesLength );
+      Signal<double>* P__i = P_i( task->getL(), s);
+      Signal<double>* Ptot = *P_tot + *P__i;
+      if ( max(*Ptot) <= P_max )
+	{
+#ifdef DEBUG
+	  cout << "leaf satisfies Pmax: " << max(*Ptot) << " <= " << P_max << endl;
+#endif
+	  sResult = s;
+	  delete Ptot;
+	  delete P__i;
+	  return true;
+	}
+      else
+	{
+#ifdef DEBUG
+	  cout << "leaf does not satisfy Pmax: " << max(*Ptot) << " <= " << P_max << endl;
+#endif
+	  delete Ptot;
+	  delete P__i;
+	  return false;
+	}
+    }
+  
+  // calculate range
+  Range range1, range2;
+  range1.left = task->getA() + vTaskParts[taskPartNumber].index;
+  range1.right = task->getD()
+    - (task->getL()->size() - vTaskParts[taskPartNumber].index);
+
+#ifdef DEBUG
+  cout<< "vTaskParts[taskPartNumber].index: " << vTaskParts[taskPartNumber].index << endl;
+#endif
+  
+  int l = getLeftScheduled(vTaskParts[taskPartNumber].index, s_task);
+  int r = getRightScheduled(vTaskParts[taskPartNumber].index, s_task, task);
+  
+  if (l == numeric_limits<int>::min())
+    range2.left = l;
+  else
+    {
+      int s_task_l = getScheduleIndexOf(l, s_task);
+      range2.left = s_task_l + (vTaskParts[taskPartNumber].index - l);
+    }
+  
+  if (r == numeric_limits<int>::max())
+    range2.right = r;
+  else
+    {
+      int s_task_r = getScheduleIndexOf(r, s_task);
+      range2.right = s_task_r - (r - vTaskParts[taskPartNumber].index);
+    }
+  
+#ifdef DEBUG
+  cout << "range1: [" << range1.left << ", " << range1.right << "]    range2: [" << range2.left << ", " << range2.right << "]" << endl;
+#endif
+  
+  Range rangeTask = intersect(range1, range2);
+
+#ifdef DEBUG
+  cout << "Range: [" << rangeTask.left << ", " << rangeTask.right << "]" << endl;
+#endif
+  //Till here, range calculation
+      
+
+
+  vector<Pair> vPminInRange; // will keep an ordered list (low to high wrt Pmin) of time slots in the calculated range 
+  for (int j = 0; j < schedulesLength; j++)
+    {
+      if (isInInterval(vPMin[j].index, rangeTask))
+	{
+	  Pair p;
+	  p.index = vPMin[j].index;
+	  p.value =  vPMin[j].value;
+	  vPminInRange.push_back(p); // fixed. not j.
+	}
+    }
+  //  sort(vPminInRange.begin(), vPminInRange.end());
+
+#ifdef DEBUG
+  cout << "sorted p_min in range: [";
+  for(vector<Pair>::iterator it = vPminInRange.begin(); it != vPminInRange.end(); ++it)
+    cout << "(" << (*it).index << ", " << (*it).value << "), " << endl;
+#endif
+
+  // for all time slots in the range ordered from low price to high, assign the current task part its time slot and continue scheduling next task parts by recursion
+  bool foundFeasible = false;
+  for(vector<Pair>::iterator it = vPminInRange.begin(); it != vPminInRange.end(); it++)
+    {
+      s_task[(*it).index] = vTaskParts[taskPartNumber].index;
+#ifdef DEBUG
+      cout << "Tree search given " << taskPartNumber << "-th task part is scheduled at " << (*it).index << endl;
+#endif
+      foundFeasible = scheduleTaskPart(task, P_max, P_tot, vPMin, vTaskParts, s_task, sResult, taskPartNumber+1);
+      if(foundFeasible)
+	break;
+      
+      // IMPORTANT: before continuing with the next possible slot of the task part, deschedule it first!
+      s_task[(*it).index] = -1;
+    }
+  return foundFeasible;
+
+}
+
 
 
 
@@ -455,7 +735,10 @@ npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>
 
       if (isConstraintSatisfied(tab, J, P_max))
         {
-          if (taskNumber + 1 != (signed) J.size())
+	  allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H,
+		   taskNumber + 1);
+          /*
+	  if (taskNumber + 1 != (signed) J.size())
             {
               //cout
 	      //  << "Moving to following task - Jumping the following tree branch-"
@@ -466,20 +749,21 @@ npTreeSearch(NPHeuristicType npHeurType, PHeuristicType pHeurType, vector<Task*>
           else
             allocTab(npHeurType, pHeurType, J, tab, pNondominatedSet, P_max, p_min, P_H,
                 taskNumber + 1);
+	  */
 
           // DONE: fix memory leakage
           vector<Signal<int>*>::iterator it = tab.end();
           it--;
           delete (*it);
           tab.pop_back();
-        }
+        } // END if Pmax constraint satisfied
+
 //      if (startTime + task->getL()->size() > task->getD())
 //        break;
 
-
       //cout << "finished scheduling for non-preemptive task: "
       //  << task->getName() << " for start time: " << startTime << endl;
-    }
+    } // END of for all possible start times
 }
 
 
