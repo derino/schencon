@@ -235,10 +235,11 @@ int main()
   if (minPeakSol->getStatus() == OPTIMAL_SOLUTION || minPeakSol->getStatus() == FEASIBLE_SOLUTION)
     {
       pr.isFeasibleILP = true;
-      pr.minPeakILP = minPeakSol->getPeak();
-      
+      pr.minPeakOfPeakParetoILP = minPeakSol->getPeak();
+
       // Find the Pareto with min peak.
       minPeakParetoSol = ilps.schedule(MINIMIZE, COST, EQ, minPeakSol->getPeak() );
+      pr.minCostOfPeakParetoILP = minPeakParetoSol->getCost();
     }
   else
     pr.isFeasibleILP = false;
@@ -316,7 +317,7 @@ int main()
   allocTab( NP_PEAK_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 	
 	
-  //double mCost = numeric_limits<double>::max();
+  double mCost = numeric_limits<double>::max();
   // Cost minTab
   //vector<Signal<int>*>* minCostTab = NULL;
   double mPeak = numeric_limits<double>::max();
@@ -345,11 +346,13 @@ int main()
       if (mPeak > msIt->getPeak())
 	{
 	  mPeak = msIt->getPeak();
+	  mCost = msIt->getCost();
 	  minPeakTab = msIt->getTab();
 	}
       //delete msIt;
     }
   pr.minPeakLee = mPeak;
+  pr.minCostLee = mCost;
 
   // write the result to file
   foutRes << "------------------------" << endl;
@@ -358,6 +361,7 @@ int main()
   if(pr.isFeasibleLee)
     {
       foutRes << "Min. peak: " << pr.minPeakLee << endl;
+      foutRes << "Min. cost: " << pr.minCostLee << endl;
       printSchedule(foutRes, *(sp->J()), *minPeakTab);
     }
   else
@@ -410,6 +414,7 @@ int main()
   sp->setPMax( pr.minPeakLee );
 
   double mPeak2 = numeric_limits<double>::max();
+  double mCost2 = numeric_limits<double>::max();
   // Peak minTab 
   vector<Signal<int>*>* minPeakTab2 = NULL;
 
@@ -443,11 +448,13 @@ int main()
       if (mPeak2 > msIt->getPeak())
 	{
 	  mPeak2 = msIt->getPeak();
+	  mCost2 = msIt->getCost();
 	  minPeakTab2 = msIt->getTab();
 	}  	    
       //delete msIt;
     }
   pr.minPeakFTSG_wLee_Pmax = mPeak2;
+  pr.minCostFTSG_wLee_Pmax = mCost2;
   
   /*
   } // END try
@@ -464,6 +471,7 @@ int main()
   if(pr.isFeasibleFTSG_wLee_Pmax)
     {
       foutRes << "Min. peak: " << pr.minPeakFTSG_wLee_Pmax << endl;
+      foutRes << "Min. cost: " << pr.minCostFTSG_wLee_Pmax << endl;
       printSchedule(foutRes, *(sp->J()), *minPeakTab2);
     }
   else
@@ -481,110 +489,114 @@ int main()
 
 
 
-  // // STEP 4
-  // // - Find the peak by our FTSG heuristic given ILP's optimum minimum peak as the Pmax constraint
-  // // =======================================================================
-  // // >>>>>>>>>>>>>>>> FTSG <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  // // =======================================================================
-  // // Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
-  // // =======================================================================
+  // STEP 4
+  // - Find the peak by our FTSG heuristic given ILP's optimum minimum peak as the Pmax constraint
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> FTSG <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  // Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // =======================================================================
 
-  // // define the problem
-  // // fill in the global variables of MOMH lib.
-  // // specify objectives
-  // NumberOfObjectives = 2;
-  // Objectives.resize(NumberOfObjectives);
-  // // comp.time objective
-  // Objectives[0].ObjectiveType = _Min;
-  // Objectives[0].bActive = true;
-  // // comm.cost objective
-  // Objectives[1].ObjectiveType = _Min;
-  // Objectives[1].bActive = true;
+  // define the problem
+  // fill in the global variables of MOMH lib.
+  // specify objectives
+  NumberOfObjectives = 2;
+  Objectives.resize(NumberOfObjectives);
+  // comp.time objective
+  Objectives[0].ObjectiveType = _Min;
+  Objectives[0].bActive = true;
+  // comm.cost objective
+  Objectives[1].ObjectiveType = _Min;
+  Objectives[1].bActive = true;
 
-  // // constraints
-  // NumberOfConstraints = 0;
-  // Constraints.resize(NumberOfConstraints);
+  // constraints
+  NumberOfConstraints = 0;
+  Constraints.resize(NumberOfConstraints);
 
-  // ////////////////////////////////////////////////////////////////////
-  // TNondominatedSet* pNondominatedSet3 = new TListSet < SchedulingMOMHSolution >;
-  // vector<Signal<int>*> emptyTab3;
+  ////////////////////////////////////////////////////////////////////
+  TNondominatedSet* pNondominatedSet3 = new TListSet < SchedulingMOMHSolution >;
+  vector<Signal<int>*> emptyTab3;
 	
-  // // FTSG: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
-  // // Sort jobs by Energy / PeakValue / Preemption
-  // sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemption); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak
-  // sp->setPMax( pr.minPeakILP );
+  // FTSG: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // Sort jobs by Energy / PeakValue / Preemption
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak, sortTasksViaPreemptionAndFreedom
+  sp->setPMax( pr.minPeakOfPeakParetoILP );
 
-  // double mPeak3 = numeric_limits<double>::max();
-  // // Peak minTab 
-  // vector<Signal<int>*>* minPeakTab3 = NULL;
+  double mPeak3 = numeric_limits<double>::max();
+  double mCost3 = numeric_limits<double>::max();
+  // Peak minTab 
+  vector<Signal<int>*>* minPeakTab3 = NULL;
 
-  // //  try {
-  // allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
-  // //allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+  //  try {
+  allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+  //allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab3, pNondominatedSet3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 	
-  //   //double mCost = numeric_limits<double>::max();
-  //   // Cost minTab
-  //   //vector<Signal<int>*>* minCostTab = NULL;
+    //double mCost = numeric_limits<double>::max();
+    // Cost minTab
+    //vector<Signal<int>*>* minCostTab = NULL;
   	
-  // if (pNondominatedSet3->iSetSize == 0)
-  //   {
-  //     pr.isFeasibleFTSG_wILP_Pmax = false;
-  // 	// cout << "No feasible schedule found!" << endl;
-  //   }
-  // else
-  //   pr.isFeasibleFTSG_wILP_Pmax = true;
+  if (pNondominatedSet3->iSetSize == 0)
+    {
+      pr.isFeasibleFTSG_wILP_Pmax = false;
+  	// cout << "No feasible schedule found!" << endl;
+    }
+  else
+    pr.isFeasibleFTSG_wILP_Pmax = true;
 	
-  // for(std::vector<TSolution*>::iterator it=pNondominatedSet3->begin(); it != pNondominatedSet3->end(); it++)
-  //   {
-  //     SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
-  // 	//cout << "Pareto\t" << *msIt << endl;
-  // 	//printTab( *(msIt->getTab()) );
+  for(std::vector<TSolution*>::iterator it=pNondominatedSet3->begin(); it != pNondominatedSet3->end(); it++)
+    {
+      SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
+  	//cout << "Pareto\t" << *msIt << endl;
+  	//printTab( *(msIt->getTab()) );
 	  
-  // 	/*if (mCost > msIt->getCost())
-  // 	  {
-  // 	  mCost = msIt->getCost();
-  // 	  //minCostTab = msIt->getTab();
-  // 	  }*/
-  //     if (mPeak3 > msIt->getPeak())
-  // 	{
-  // 	  mPeak3 = msIt->getPeak();
-  // 	  minPeakTab3 = msIt->getTab();
-  // 	}  	    
-  // 	//delete msIt;
-  //   }
-  // pr.minPeakFTSG_wILP_Pmax = mPeak3;
+  	/*if (mCost > msIt->getCost())
+  	  {
+  	  mCost = msIt->getCost();
+  	  //minCostTab = msIt->getTab();
+  	  }*/
+      if (mPeak3 > msIt->getPeak())
+  	{
+  	  mPeak3 = msIt->getPeak();
+	  mCost3 = msIt->getCost();
+  	  minPeakTab3 = msIt->getTab();
+  	}  	    
+  	//delete msIt;
+    }
+  pr.minPeakFTSG_wILP_Pmax = mPeak3;
+  pr.minCostFTSG_wILP_Pmax = mCost3;
 
-  // /*
-  // } // END try
-  // catch(InfeasibleSolutionException& snfe)
-  //   {
-  //     pr.isFeasibleFTSG_wILP_Pmax = false;
-  //   }
-  // */
+  /*
+  } // END try
+  catch(InfeasibleSolutionException& snfe)
+    {
+      pr.isFeasibleFTSG_wILP_Pmax = false;
+    }
+  */
 
-  // // write the result to file
-  // foutRes << "-----------------------------------------" << endl;
-  // foutRes << "Peak minimization by FTSG with Pmax = ILP" << endl;
-  // foutRes << "-----------------------------------------" << endl;
-  // if(pr.isFeasibleFTSG_wILP_Pmax)
-  //   {
-  //     foutRes << "Min. peak: " << pr.minPeakFTSG_wILP_Pmax << endl;
-  //     printSchedule(foutRes, *(sp->J()), *minPeakTab3);
-  //   }
-  // else
-  //   foutRes << "Infeasible solution by FTSG with Pmax = ILP!" << endl;
-  // foutRes << endl;
+  // write the result to file
+  foutRes << "-----------------------------------------" << endl;
+  foutRes << "Peak minimization by FTSG with Pmax = ILP" << endl;
+  foutRes << "-----------------------------------------" << endl;
+  if(pr.isFeasibleFTSG_wILP_Pmax)
+    {
+      foutRes << "Min. peak: " << pr.minPeakFTSG_wILP_Pmax << endl;
+      foutRes << "Min. cost: " << pr.minCostFTSG_wILP_Pmax << endl;
+      printSchedule(foutRes, *(sp->J()), *minPeakTab3);
+    }
+  else
+    foutRes << "Infeasible solution by FTSG with Pmax = ILP!" << endl;
+  foutRes << endl;
 
-  // // delete solutions. not needed because delete msIt above already deletes them.
-  // pNondominatedSet3->DeleteAll();
-  // delete pNondominatedSet3;
-  // ////////////////////////////////////////////////////////////////////
-  // // End of FTSG - STEP 4 ////////////////////////////////////////////
-  // ////////////////////////////////////////////////////////////////////
+  // delete solutions. not needed because delete msIt above already deletes them.
+  pNondominatedSet3->DeleteAll();
+  delete pNondominatedSet3;
+  ////////////////////////////////////////////////////////////////////
+  // End of FTSG - STEP 4 ////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
 
 
   // print the peak minimization results
-  pr.print();
+  pr.print(cout);
 
   // write the peak minimization results in a file
   ofstream fout("solution-peak-minimization.txt");
