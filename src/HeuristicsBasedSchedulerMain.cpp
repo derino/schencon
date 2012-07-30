@@ -230,11 +230,15 @@ int main()
   ILPScheduler ilps(/*globalArgs.timeLimit, globalArgs.gapLimit,*/ sp);  
   //  SchedulingSolution* minCostSol = ilps.schedule(MINIMIZE, COST);
   SchedulingSolution* minPeakSol = ilps.schedule(MINIMIZE, PEAK);
+  SchedulingSolution* minPeakParetoSol = minPeakSol;
 
   if (minPeakSol->getStatus() == OPTIMAL_SOLUTION || minPeakSol->getStatus() == FEASIBLE_SOLUTION)
     {
       pr.isFeasibleILP = true;
       pr.minPeakILP = minPeakSol->getPeak();
+      
+      // Find the Pareto with min peak.
+      minPeakParetoSol = ilps.schedule(MINIMIZE, COST, EQ, minPeakSol->getPeak() );
     }
   else
     pr.isFeasibleILP = false;
@@ -243,7 +247,7 @@ int main()
   foutRes << "------------------------" << endl;
   foutRes << "Peak minimization by ILP" << endl;
   foutRes << "------------------------" << endl;
-  minPeakSol->print(foutRes);
+  minPeakParetoSol->print(foutRes);
   foutRes << endl;
 
   // Relevant results of the ILP solution
@@ -256,6 +260,8 @@ int main()
 
   //delete minCostSol;
   delete minPeakSol;
+  if (pr.isFeasibleILP)
+    delete minPeakParetoSol;
   ////////////////////////////////////////////////////////////////////
   // End of ILP - STEP 1 /////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////

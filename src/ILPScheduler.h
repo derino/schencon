@@ -100,9 +100,11 @@ class ILPScheduler
   int sumOfNonPr(int n);
   void nonpreamptableConstraints (SchedulingProblem* sp, IloModel model, IloNumVarArray t, IloRangeArray c);
 
-  void costObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x);
+  void costObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double costConstraint, SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray c);
 
-//  void compObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double compConstraint, MappingProblem* mp, IloModel model, IloBoolVarArray x, IloNumVarArray Tn, IloRangeArray c);
+  void peakObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double peakConstraint, SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray c);
+
+  void costObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x);
 
   void peakObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x);
 

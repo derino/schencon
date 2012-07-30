@@ -38,12 +38,12 @@ int SchedulingSolution::uniqueID = 0;
 
 SchedulingSolution::SchedulingSolution()
 {
-  
+  Xnml = NULL;
 }
 
 SchedulingSolution::~SchedulingSolution()
 {
-  if (Xnml != NULL)
+  if (Xnml != NULL ||  (status == OPTIMAL_SOLUTION || status == FEASIBLE_SOLUTION)  )
     {
       for(int n=0; n<sp->N(); n++)
 	{
@@ -52,7 +52,7 @@ SchedulingSolution::~SchedulingSolution()
 	    {
 	      delete[] Xnml[n][m];
 	    }
-	  delete Xnml[n];
+	  delete[] Xnml[n];
 	}
       delete[] Xnml;
       Xnml = NULL;

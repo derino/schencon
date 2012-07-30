@@ -7,6 +7,7 @@
 #include <sstream>
 #include <math.h>
 #include <sys/stat.h>
+#include <unistd.h>
 //#include <boost/lambda/lambda.hpp>
 
 #include "Signal.h"
@@ -20,7 +21,7 @@ using namespace std;
 
 // Global Variables
 
-int L = 48;
+int L = 20;
 
 
 float rand01()
@@ -67,7 +68,7 @@ Task* createTask(int i, bool preemptable, float par)
   int tp = 1 + rand() % 10;
 
   //  Max # of repeating periods = maxR
-  int maxR = L/tp; // floor of the division. not necessary due to dividing two ints.
+  int maxR = (L/tp)/2; // floor of the division. not necessary due to dividing two ints. NOTE: we added the division by 2 in order to create tasks with greater freedom values (d-a-m). m:task length
 
   //  # of repeating periods = R
   int R = 1 + rand() % maxR;          //gives a number in [1,maxR]
@@ -121,7 +122,8 @@ int main()
 
 
   // Preemptive Ratio
-  float prr_arr[6] = {0, 0.2, 0.4, 0.6, 0.8, 1};
+  float prr_arr[6] = {0, 0.5, 1};
+  //  float prr_arr[6] = {0, 0.2, 0.4, 0.6, 0.8, 1};
 
   // Task Set Size
   int tss = 10;

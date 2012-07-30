@@ -133,19 +133,27 @@ void execute () // old main
   SchedulingProblemReader* spr = new SchedulingProblemReader();
   SchedulingProblem* sp = NULL;
   sp = spr->read();
-  sp->setPMax( sp->PMaxLow() );
+  sp->setPMax( sp->PMaxHigh() );
   sp->print();
 
   // Solve the problem
   //  ilp_scheduler(globalArgs.timeLimit, globalArgs.gapLimit, sp);
   ILPScheduler ilps(globalArgs.timeLimit, globalArgs.gapLimit, sp);  
+  
+  // Find the Pareto with min cost.
   SchedulingSolution* minCostSol = ilps.schedule(MINIMIZE, COST);
+  SchedulingSolution* minCostParetoSol = ilps.schedule(MINIMIZE, PEAK, EQ, minCostSol->getCost() );
+
+  // Find the Pareto with min peak.
   SchedulingSolution* minPeakSol = ilps.schedule(MINIMIZE, PEAK);
+  SchedulingSolution* minPeakParetoSol = ilps.schedule(MINIMIZE, COST, EQ, minPeakSol->getPeak() );
 
   // Print solutions
   cout << "Solutions:" << endl;
-  minCostSol->print(cout);
-  minPeakSol->print(cout);
+  //minCostSol->print(cout);
+  minCostParetoSol->print(cout);
+  //minPeakSol->print(cout);
+  minPeakParetoSol->print(cout);
 
   // Relevant results of the ILP solution
   // minCostSol->getCost();
@@ -154,8 +162,12 @@ void execute () // old main
   // cout << *minCostSol << endl;
   // cout << *minPeakSol << endl;
 
+  // TODO: in case of infeasible solution, seg. faults.
   delete minCostSol;
+  delete minCostParetoSol;
   delete minPeakSol;
+  delete minPeakParetoSol;
+
   delete spr;
   return;
 }  // END execute

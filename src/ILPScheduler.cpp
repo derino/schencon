@@ -217,6 +217,20 @@ ILPScheduler::schedule(GoalType gType, ObjectiveType oType, RelationType rType, 
      else if (rType == NONE && oType == PEAK) // single peak objective
        // define peak as the objective
        peakObjective(gType, sp, model, x);
+     else if (oType == COST) // multi obj.
+       {
+	 // define peak as a constraint
+	 peakObjectiveAsConstraint (/*gType,*/ rType, thresholdConstraint, sp, model, x, objectiveCons);
+	 // define cost as the objective
+	 costObjective(gType, sp, model, x);
+       }
+     else if (oType == PEAK) // multi obj.
+       {
+	 // define cost as a constraint
+	 costObjectiveAsConstraint (rType, thresholdConstraint, sp, model, x, objectiveCons);
+	 // define peak as the objective
+	 peakObjective(gType, sp, model, x);
+       }
      else
        {
 	 cerr << "Invalid use of the schedule() method!" << endl;
@@ -579,6 +593,103 @@ ILPScheduler::nonpreamptableConstraints (SchedulingProblem* sp, IloModel model, 
 
   model.add(c);
 } // END nonpreamptableConstraints
+
+
+void 
+ILPScheduler::peakObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double peakConstraint, SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray c)
+  {
+  IloEnv env = model.getEnv();
+
+  // define peak = max (Ptot) as a decision variable
+  IloNumVar peak(env);
+  if(rType == LEQ)
+    peak.setBounds(-IloInfinity, peakConstraint);
+  else if(rType == EQ)
+    peak.setBounds(peakConstraint, peakConstraint);
+  else // rType == GEQ
+    peak.setBounds(peakConstraint, IloInfinity);
+  peak.setName("peak");
+  
+  // START copy-paste from peakObjective
+  // define Ptot decision variables
+  IloNumVarArray Ptot(env);
+  for(int l=0; l<sp->L(); l++)
+    {
+      Ptot.add(IloNumVar(env));
+      std::stringstream l_str;
+      l_str << l+1;
+      Ptot[l].setName( ("Ptot("+ l_str.str() + ")").c_str() );
+    }
+  
+  // define constraints, first Ptot
+  for(int l=0; l < sp->L(); l++)
+    {
+      c.add(IloRange(env, 0.0, 0.0));
+      std::stringstream l_str;
+      l_str << l+1;
+      c[l].setName( ("peak_Ptot_c" + l_str.str()).c_str() );
+      c[l].setLinearCoef( Ptot[l], -1.0 );
+
+      for(int n=0; n < sp->N(); n++)
+	{
+	  int M = sp->J()->at(n)->getL()->size();
+	  for(int m = 0; m < M; m++)
+	    {
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
+	      double l_nm = sp->J()->at(n)->getL()->at(m);
+	      c[l].setLinearCoef( x[nml], l_nm );
+	    }
+	}
+    }
+
+  // define constraints - second peak - Ptot_l >= 0
+  for(int l=0; l < sp->L(); l++)
+    {
+      c.add(IloRange(env, 0.0, IloInfinity));
+      std::stringstream l_str;
+      l_str << l+1;
+      c[l+sp->L()].setName( ("peak_maxPtot_c" + l_str.str()).c_str() );
+      c[l+sp->L()].setLinearCoef(peak, 1.0);
+      c[l+sp->L()].setLinearCoef(Ptot[l], -1.0);
+    }
+  // END copy-paste from peakObjective
+  
+  model.add(c);
+  } // END peakObjectiveAsConstraint
+
+void 
+ILPScheduler::costObjectiveAsConstraint (/*GoalType gType,*/ RelationType rType, double costConstraint, SchedulingProblem* sp, IloModel model, IloBoolVarArray x, IloRangeArray c)
+{
+  IloEnv env = model.getEnv();
+  
+  // define constraint
+  if (rType == LEQ)
+    c.add(IloRange(env, -IloInfinity, costConstraint));
+  else if (rType == EQ)
+    c.add(IloRange(env, costConstraint, costConstraint));
+  else // rType == GEQ
+    c.add(IloRange(env, costConstraint, IloInfinity));
+  
+  c[0].setName("cost_c");
+  
+  for(int n=0; n < sp->N(); n++)
+    {
+      int M = sp->J()->at(n)->getL()->size();
+      for(int m = 0; m < M; m++)
+	{
+	  for(int l=0; l < sp->L(); l++)
+	    {
+	      int nml = sumM(n)*sp->L() + m*sp->L() + l;
+	      double p_l = sp->pMin()->at(l);
+	      double l_nm = sp->J()->at(n)->getL()->at(m);
+	      c[0].setLinearCoef(x[nml], p_l*l_nm );
+	    } // end l
+	} // end m
+    } // end n
+  
+   model.add(c);
+} // END costObjectiveAsConstraint
+
 
 void 
 ILPScheduler::costObjective (GoalType gType, SchedulingProblem* sp, IloModel model, IloBoolVarArray x)
