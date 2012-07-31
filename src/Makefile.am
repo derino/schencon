@@ -25,7 +25,7 @@ AM_LDFLAGS += -m32
 endif !BIT64CPLEXSYSTEM
 LDADD = -lilocplex -lcplex -lconcert -lm
 
-bin_PROGRAMS    = ilpsec problemcreator heursec
+bin_PROGRAMS    = ilpsec problemcreator heursec validateschedule
 #lib_LIBRARIES   = libfoo1.a libfoo2.a libfoo3.a ....
 #check_PROGRAMS  = test1 test2 test3 ....
 #TESTS           = $(check_PROGRAMS)
@@ -47,8 +47,7 @@ ilpsec_SOURCES = ILPScheduler.cpp \
 		 Task.cpp \
 		 util.h \
 		 Signal.h
-		 
-		
+
 ilpsec_LDADD   = $(LDADD) 
 #ilpsec_LDFLAGS = $(AM_LDFLAGS)
 #prog1_DEPENDENCIES = dep1 dep2 dep3 ...
@@ -88,3 +87,8 @@ heursec_LDADD = $(LIBMOMH_LIBS) $(LDADD)
 heursec_CXXFLAGS = $(LIBMOMH_CFLAGS)
 
 
+validateschedule_SOURCES = ScheduleValidationTest.cpp \
+			   util.h \
+			   Signal.h \
+			   Task.h \
+		 	   Task.cpp

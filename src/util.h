@@ -1,7 +1,11 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <vector>
+using namespace std;
+
 #include "Signal.h"
+#include "Task.h"
 
 //Verilen schedule a gore bir array yaratip sonrasinda da sinyal formatina cevirerek bu signali geri gonderiyor.
 //ex: tab:[0, 1, 1, 0] => res[j]=[0, 1.1, 2.2, 0]
