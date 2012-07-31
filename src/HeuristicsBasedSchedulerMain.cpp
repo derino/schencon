@@ -90,6 +90,83 @@ int main()
   ofstream foutRes("solution-peak-minimization-details.txt");
   sp->print(foutRes);
 
+
+
+
+  // STEP 0
+  // - Find the result by ASAP
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> ASAP<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  // Schdeduling as soon as task arrives.
+  // =======================================================================
+
+  // define the problem
+  // fill in the global variables of MOMH lib.
+  // specify objectives
+  NumberOfObjectives = 2;
+  Objectives.resize(NumberOfObjectives);
+  // comp.time objective
+  Objectives[0].ObjectiveType = _Min;
+  Objectives[0].bActive = true;
+  // comm.cost objective
+  Objectives[1].ObjectiveType = _Min;
+  Objectives[1].bActive = true;
+
+  // constraints
+  NumberOfConstraints = 0;
+  Constraints.resize(NumberOfConstraints);
+
+  TNondominatedSet* pNondominatedSet0 = new TListSet < SchedulingMOMHSolution >;
+  vector<Signal<int>*> emptyTab0;
+	
+  // ASAP Scheduling
+  sp->setPMax( numeric_limits<double>::max() );
+  allocTab( NP_ASAP_SCHEDULING, P_ASAP_SCHEDULING, *(sp->J()), emptyTab0, pNondominatedSet0, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+  // Peak minTab 
+  vector<Signal<int>*>* minPeakTab0 = NULL;
+	
+  if (pNondominatedSet0->iSetSize == 0)
+    {
+      pr.isFeasibleASAP = false;
+      cout << "No feasible schedule found!" << endl;
+    }
+  else
+    {
+      pr.isFeasibleASAP = true;
+      // pareto set contains 1 solution if feasible.
+      SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) pNondominatedSet0->at(0);
+      pr.minPeakASAP = msIt->getPeak();
+      pr.minCostASAP = msIt->getCost();
+      minPeakTab0 = msIt->getTab();
+    }
+	
+  // write the result to file
+  foutRes << "------------------------" << endl;
+  foutRes << "Peak minimization by ASAP" << endl;
+  foutRes << "------------------------" << endl;
+  if(pr.isFeasibleASAP)
+    {
+      foutRes << "Min. peak: " << pr.minPeakASAP << endl;
+      foutRes << "Min. cost: " << pr.minCostASAP << endl;
+      printSchedule(foutRes, *(sp->J()), *minPeakTab0);
+    }
+  else
+    foutRes << "Infeasible solution by ASAP!" << endl;
+  foutRes << endl;
+
+  // delete solutions. not needed because delete msIt above already deletes them.
+  pNondominatedSet0->DeleteAll();
+  delete pNondominatedSet0;
+  ////////////////////////////////////////////////////////////////////
+  // End of ASAP - STEP 0 /////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+
+
+
+
+
   // STEP 1
   // - First find optimum minimum peak without Pmax constraint by ILP
   // =======================================================================
@@ -502,7 +579,7 @@ int main()
   vector<Signal<int>*>* minPeakTab2_3 = NULL;
 
   //  try {
-  allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab2_3, pNondominatedSet2_3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+  allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MIN_WITH_TREE_SEARCH2, *(sp->J()), emptyTab2_3, pNondominatedSet2_3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
 
   if (pNondominatedSet2_3->iSetSize == 0)
     {
@@ -569,6 +646,7 @@ int main()
 
   // // STEP 4
   // // - Find the peak by our PACM heuristic given ILP's optimum minimum peak as the Pmax constraint
+  // // NOTE: step 4 is commented because it takes some time to do the tree search to find a solution as good as the ILP's.
   // // =======================================================================
   // // >>>>>>>>>>>>>>>> PACM <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   // // =======================================================================
@@ -673,6 +751,377 @@ int main()
   // ////////////////////////////////////////////////////////////////////
 
 
+
+
+
+  ///////////////////////////////////////////////
+  // COST MINIMIZATION WITHOUT PEAK CONSTRAINT //
+  ///////////////////////////////////////////////
+
+  // STEP 5
+  // - First find optimum minimum cost without Pmax constraint by ILP
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> ILP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+
+  sp->setPMax( numeric_limits<double>::max() );
+  ILPScheduler ilps_costmin(/*globalArgs.timeLimit, globalArgs.gapLimit,*/ sp);  
+  SchedulingSolution* minCostSol = ilps_costmin.schedule(MINIMIZE, COST);
+  SchedulingSolution* minCostParetoSol = minCostSol;
+
+  if (minCostSol->getStatus() == OPTIMAL_SOLUTION || minCostSol->getStatus() == FEASIBLE_SOLUTION)
+    {
+      pr.isFeasibleILP_costmin = true;
+      pr.minCostOfCostParetoILP = minCostSol->getCost();
+
+      // Find the Pareto with min cost.
+      minCostParetoSol = ilps_costmin.schedule(MINIMIZE, PEAK, EQ, minCostSol->getCost() );
+      pr.minPeakOfCostParetoILP = minCostParetoSol->getPeak();
+    }
+  else
+    pr.isFeasibleILP_costmin = false;
+
+  // write the result in file
+  foutRes << "------------------------" << endl;
+  foutRes << "Cost minimization by ILP" << endl;
+  foutRes << "------------------------" << endl;
+  minCostParetoSol->print(foutRes);
+  foutRes << endl;
+
+  delete minCostSol;
+  if (pr.isFeasibleILP_costmin)
+    delete minCostParetoSol;
+  ////////////////////////////////////////////////////////////////////
+  // End of ILP - STEP 5 /////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+
+
+
+
+
+  // STEP 6.1
+  // - Find the cost by our PACMFG heuristic without the Pmax constraint
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> PACMFG <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  // Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // =======================================================================
+
+  // define the problem
+  // fill in the global variables of MOMH lib.
+  // specify objectives
+  NumberOfObjectives = 2;
+  Objectives.resize(NumberOfObjectives);
+  // comp.time objective
+  Objectives[0].ObjectiveType = _Min;
+  Objectives[0].bActive = true;
+  // comm.cost objective
+  Objectives[1].ObjectiveType = _Min;
+  Objectives[1].bActive = true;
+
+  // constraints
+  NumberOfConstraints = 0;
+  Constraints.resize(NumberOfConstraints);
+
+  ////////////////////////////////////////////////////////////////////
+  TNondominatedSet* pNondominatedSet6_1 = new TListSet < SchedulingMOMHSolution >;
+  vector<Signal<int>*> emptyTab6_1;
+	
+  // PACMFG: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // Sort jobs by Energy / PeakValue / Preemption
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak
+  sp->setPMax( numeric_limits<double>::max() );
+
+  double mPeak6_1 = numeric_limits<double>::max();
+  double mCost6_1 = numeric_limits<double>::max();
+  // Peak minTab 
+  vector<Signal<int>*>* minCostTab6_1 = NULL;
+
+  //  try {
+  allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab6_1, pNondominatedSet6_1, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+  //allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab2, pNondominatedSet2, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+	
+    //double mCost = numeric_limits<double>::max();
+    // Cost minTab
+    //vector<Signal<int>*>* minCostTab = NULL;
+	
+  if (pNondominatedSet6_1->iSetSize == 0)
+    {
+      pr.isFeasiblePACMFG_costmin = false;
+      //cout << "No feasible schedule found!" << endl;
+    }
+  else
+    pr.isFeasiblePACMFG_costmin = true;
+	
+  for(std::vector<TSolution*>::iterator it=pNondominatedSet6_1->begin(); it != pNondominatedSet6_1->end(); it++)
+    {
+      SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
+      //cout << "Pareto\t" << *msIt << endl;
+      //printTab( *(msIt->getTab()) );
+      
+      /*if (mCost > msIt->getCost())
+	{
+	mCost = msIt->getCost();
+	//minCostTab = msIt->getTab();
+	}*/
+      if (mCost6_1 > msIt->getCost())
+	{
+	  mPeak6_1 = msIt->getPeak();
+	  mCost6_1 = msIt->getCost();
+	  minCostTab6_1 = msIt->getTab();
+	}  	    
+      //delete msIt;
+    }
+  pr.minPeakPACMFG_costmin = mPeak6_1;
+  pr.minCostPACMFG_costmin = mCost6_1;
+  
+  /*
+  } // END try
+  catch(InfeasibleSolutionException& snfe)
+    {
+      pr.isFeasiblePACMFG_costmin = false;
+    }
+  */
+
+  // write the result to file
+  foutRes << "-----------------------------------------" << endl;
+  foutRes << "Cost minimization by PACMFG" << endl;
+  foutRes << "-----------------------------------------" << endl;
+  if(pr.isFeasiblePACMFG_costmin)
+    {
+      foutRes << "Min. peak: " << pr.minPeakPACMFG_costmin << endl;
+      foutRes << "Min. cost: " << pr.minCostPACMFG_costmin << endl;
+      printSchedule(foutRes, *(sp->J()), *minCostTab6_1);
+    }
+  else
+    foutRes << "Infeasible solution by PACMFG!" << endl;
+  foutRes << endl;
+
+  // delete solutions. not needed because delete msIt above already deletes them.
+  pNondominatedSet6_1->DeleteAll();
+  delete pNondominatedSet6_1;
+  ////////////////////////////////////////////////////////////////////
+  // End of PACMFG - STEP 6.1 ////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+
+
+
+
+
+  // STEP 6.2
+  // - Find the cost by our PACMGG heuristic without the Pmax constraint
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> PACMGG <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  // Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // =======================================================================
+
+  // define the problem
+  // fill in the global variables of MOMH lib.
+  // specify objectives
+  NumberOfObjectives = 2;
+  Objectives.resize(NumberOfObjectives);
+  // comp.time objective
+  Objectives[0].ObjectiveType = _Min;
+  Objectives[0].bActive = true;
+  // comm.cost objective
+  Objectives[1].ObjectiveType = _Min;
+  Objectives[1].bActive = true;
+
+  // constraints
+  NumberOfConstraints = 0;
+  Constraints.resize(NumberOfConstraints);
+
+  ////////////////////////////////////////////////////////////////////
+  TNondominatedSet* pNondominatedSet6_2 = new TListSet < SchedulingMOMHSolution >;
+  vector<Signal<int>*> emptyTab6_2;
+	
+  // PACMGG: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // Sort jobs by Energy / PeakValue / Preemption
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak
+  sp->setPMax( numeric_limits<double>::max() );
+
+  double mPeak6_2 = numeric_limits<double>::max();
+  double mCost6_2 = numeric_limits<double>::max();
+  // Cost minTab 
+  vector<Signal<int>*>* minCostTab6_2 = NULL;
+
+  //  try {
+  allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MIN_WITH_TREE_SEARCH3, *(sp->J()), emptyTab6_2, pNondominatedSet6_2, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+  if (pNondominatedSet6_2->iSetSize == 0)
+    {
+      pr.isFeasiblePACMGG_costmin = false;
+      //cout << "No feasible schedule found!" << endl;
+    }
+  else
+    pr.isFeasiblePACMGG_wLee_Pmax = true;
+	
+  for(std::vector<TSolution*>::iterator it=pNondominatedSet6_2->begin(); it != pNondominatedSet6_2->end(); it++)
+    {
+      SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
+      //cout << "Pareto\t" << *msIt << endl;
+      //printTab( *(msIt->getTab()) );
+      
+      /*if (mCost > msIt->getCost())
+	{
+	mCost = msIt->getCost();
+	//minCostTab = msIt->getTab();
+	}*/
+      if (mCost6_2 > msIt->getCost())
+	{
+	  mPeak6_2 = msIt->getPeak();
+	  mCost6_2 = msIt->getCost();
+	  minCostTab6_2 = msIt->getTab();
+	}  	    
+      //delete msIt;
+    }
+  pr.minPeakPACMGG_costmin = mPeak6_2;
+  pr.minCostPACMGG_costmin = mCost6_2;
+  
+  /*
+  } // END try
+  catch(InfeasibleSolutionException& snfe)
+    {
+      pr.isFeasiblePACMGG_costmin = false;
+    }
+  */
+
+  // write the result to file
+  foutRes << "-----------------------------------------" << endl;
+  foutRes << "Cost minimization by PACMGG" << endl;
+  foutRes << "-----------------------------------------" << endl;
+  if(pr.isFeasiblePACMGG_costmin)
+    {
+      foutRes << "Min. peak: " << pr.minPeakPACMGG_costmin << endl;
+      foutRes << "Min. cost: " << pr.minCostPACMGG_costmin << endl;
+      printSchedule(foutRes, *(sp->J()), *minCostTab6_2);
+    }
+  else
+    foutRes << "Infeasible solution by PACMGG!" << endl;
+  foutRes << endl;
+
+  // delete solutions. not needed because delete msIt above already deletes them.
+  pNondominatedSet6_2->DeleteAll();
+  delete pNondominatedSet6_2;
+  ////////////////////////////////////////////////////////////////////
+  // End of PACMGG - STEP 6.2 ////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+
+
+
+
+
+  // STEP 6.3
+  // - Find the cost by our PACMGF heuristic without the Pmax constraint
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> PACMGF <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  // Cost minimization with Greedy search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // =======================================================================
+
+  // define the problem
+  // fill in the global variables of MOMH lib.
+  // specify objectives
+  NumberOfObjectives = 2;
+  Objectives.resize(NumberOfObjectives);
+  // comp.time objective
+  Objectives[0].ObjectiveType = _Min;
+  Objectives[0].bActive = true;
+  // comm.cost objective
+  Objectives[1].ObjectiveType = _Min;
+  Objectives[1].bActive = true;
+
+  // constraints
+  NumberOfConstraints = 0;
+  Constraints.resize(NumberOfConstraints);
+
+  ////////////////////////////////////////////////////////////////////
+  TNondominatedSet* pNondominatedSet6_3 = new TListSet < SchedulingMOMHSolution >;
+  vector<Signal<int>*> emptyTab6_3;
+	
+  // PACMGF: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // Sort jobs by Energy / PeakValue / Preemption
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemptionAndFreedom); // sortTasksViaPreemption sortTasksViaPeakValue sortTasksViaEnergy sortTasksViaPreemptionAndPeak
+  sp->setPMax( numeric_limits<double>::max() );
+
+  double mPeak6_3 = numeric_limits<double>::max();
+  double mCost6_3 = numeric_limits<double>::max();
+  // Cost minTab 
+  vector<Signal<int>*>* minCostTab6_3 = NULL;
+
+  //  try {
+  allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MIN_WITH_TREE_SEARCH2, *(sp->J()), emptyTab6_3, pNondominatedSet6_3, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+  if (pNondominatedSet6_3->iSetSize == 0)
+    {
+      pr.isFeasiblePACMGF_costmin = false;
+      //cout << "No feasible schedule found!" << endl;
+    }
+  else
+    pr.isFeasiblePACMGF_costmin = true;
+	
+  for(std::vector<TSolution*>::iterator it=pNondominatedSet6_3->begin(); it != pNondominatedSet6_3->end(); it++)
+    {
+      SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
+      //cout << "Pareto\t" << *msIt << endl;
+      //printTab( *(msIt->getTab()) );
+      
+      /*if (mCost > msIt->getCost())
+	{
+	mCost = msIt->getCost();
+	//minCostTab = msIt->getTab();
+	}*/
+      if (mCost6_3 > msIt->getCost())
+	{
+	  mPeak6_3 = msIt->getPeak();
+	  mCost6_3 = msIt->getCost();
+	  minCostTab6_3 = msIt->getTab();
+	}  	    
+      //delete msIt;
+    }
+  pr.minPeakPACMGF_costmin = mPeak6_3;
+  pr.minCostPACMGF_costmin = mCost6_3;
+  
+  /*
+  } // END try
+  catch(InfeasibleSolutionException& snfe)
+    {
+      pr.isFeasiblePACMGF_wLee_Pmax = false;
+    }
+  */
+
+  // write the result to file
+  foutRes << "-----------------------------------------" << endl;
+  foutRes << "Cost minimization by PACMGF" << endl;
+  foutRes << "-----------------------------------------" << endl;
+  if(pr.isFeasiblePACMGF_costmin)
+    {
+      foutRes << "Min. peak: " << pr.minPeakPACMGF_costmin << endl;
+      foutRes << "Min. cost: " << pr.minCostPACMGF_costmin << endl;
+      printSchedule(foutRes, *(sp->J()), *minCostTab6_3);
+    }
+  else
+    foutRes << "Infeasible solution by PACMGF!" << endl;
+  foutRes << endl;
+
+  // delete solutions. not needed because delete msIt above already deletes them.
+  pNondominatedSet6_3->DeleteAll();
+  delete pNondominatedSet6_3;
+  ////////////////////////////////////////////////////////////////////
+  // End of PACMGF - STEP 6.3 ////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
   // print the peak minimization results
   pr.print(cout);
 
@@ -689,6 +1138,26 @@ int main()
   // delete problem and problem reader
   delete sp;
   delete spr;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   //        cout << "Minimum cost is " << minCost << endl;
