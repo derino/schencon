@@ -34,13 +34,13 @@
   */
 #include "ILPScheduler.h"
 
-ILPScheduler::ILPScheduler(SchedulingProblem* _sp) : timeLimit(-1), gapLimit(100), sp(_sp)
+ILPScheduler::ILPScheduler(SchedulingProblem* _sp) : timeLimit(-1), gapLimit(100.0), sp(_sp), executionCount(0)
 {
   // timeLimit = -1; => this is important. It means limiting is not active.
   // gapLimit = 100; => doesn't mean anything as long as limiting is not active.
 }
 
-ILPScheduler::ILPScheduler(double _timeLimit, double _gapLimit, SchedulingProblem* _sp) : timeLimit(_timeLimit), gapLimit(_gapLimit), sp(_sp)
+ILPScheduler::ILPScheduler(double _timeLimit, double _gapLimit, SchedulingProblem* _sp) : timeLimit(_timeLimit), gapLimit(_gapLimit), sp(_sp), executionCount(0)
 {
 }
 
@@ -294,10 +294,18 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
   // Optimize the problem and obtain solution.
   IloCplex cplex(model);
   
-  cplex.exportModel("problem.lp");
+  stringstream probStr;
+  probStr << "problem-" << executionCount++ << ".lp";
+  cplex.exportModel(probStr.str().c_str());
   
   // Turn off CPLEX logging
   cplex.setParam(IloCplex::MIPDisplay, 0);
+
+  // Reduce optimality tolerance
+  //  cplex.setParam(IloCplex::EpOpt, 0.000000001);
+  //cplex.setParam(IloCplex::EpGap, 0.0);
+  //cplex.setParam(IloCplex::EpAGap, 0.000000001);
+  //cplex.setParam(IloCplex::EpRHS, 0.000000001);
 
   // if timeLimit is set then register the time limit callback
   if ( timeLimit != -1 ) {

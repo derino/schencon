@@ -72,6 +72,7 @@ class ILPScheduler
   double timeLimit; // in seconds
   double gapLimit; // in percentages
   SchedulingProblem* sp;
+  int executionCount;
 
 /**
 // timeLimit = -1: cplex.solve() runs until the optimal solution is found. 
