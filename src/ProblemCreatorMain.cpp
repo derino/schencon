@@ -29,6 +29,12 @@ float rand01()
   return ((float) rand()) / RAND_MAX;
 }
 
+// returns minimum of a and b
+int min(int a, int b)
+{
+  return (a<b)?a:b;
+}
+
 Signal<double>* createPMin()
 {
   // configuration for p_min duration = schedule lengt, # of period repeats = 1
@@ -68,13 +74,19 @@ Task* createTask(int i, bool preemptable, float par)
   int tp = 1 + rand() % 10;
 
   //  Max # of repeating periods = maxR
-  int maxR = (L/tp)/2; // floor of the division. not necessary due to dividing two ints. NOTE: we added the division by 2 in order to create tasks with greater freedom values (d-a-m). m:task length
+  int maxR = L/tp; // floor of the division. not necessary due to dividing two ints. NOTE: we added the division by 2 in order to create tasks with greater freedom values (d-a-m). m:task length
 
-  //  # of repeating periods = R
+   //  # of repeating periods = R
   int R = 1 + rand() % maxR;          //gives a number in [1,maxR]
 
   // Randomly deadline assigning
-  j->setD( ( rand()%(L - tp*R) ) + tp*R );
+  if(L-tp*R == 0)
+    j->setD( tp*R );
+  else
+    {
+      int freedom = min( rand()%(L - tp*R), 5); // 5 is max. possible freedom. our choice.
+      j->setD( freedom + tp*R ); //deadline = duration plus L-tp*R arasinda random bir sayi.
+    }
 
   // - set task's load profile
   //  average power of sinosoid: aS
@@ -122,7 +134,7 @@ int main()
 
 
   // Preemptive Ratio
-  float prr_arr[6] = {0, 0.5, 1};
+  float prr_arr[3] = {0, 0.5, 1};
   //  float prr_arr[6] = {0, 0.2, 0.4, 0.6, 0.8, 1};
 
   // Task Set Size
@@ -135,7 +147,7 @@ int main()
   bool preemptive;
   float par;
 
-  for (int a = 0; a < 6; a++)
+  for (int a = 0; a < 3; a++)
     {
       cout << endl << "prr_arr[" << a << "] = " << prr_arr[a] << endl;
 
