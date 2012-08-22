@@ -1,4 +1,7 @@
 //#define DEBUG
+#define PEAK_MINIMIZATION_PROBLEM
+#define COST_MINIMIZATION_PROBLEM
+
 
 #include <iostream>
 #include <stdio.h>
@@ -7,6 +10,11 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
+
+#include <unistd.h>
+#include <getopt.h>
+#include <string.h>
+
 //#include <boost/lambda/lambda.hpp>
 
 #include <momh/tlistset.h>
@@ -26,7 +34,60 @@ using namespace std;
 
 //#define L 20
 
-int main()
+
+void usage( void )
+{
+  puts( "Usage for heursec: heursec [--time-limit time_limit [--gap-limit gap_limit]]" );
+  /* ... */
+  exit( EXIT_FAILURE );
+}
+
+
+
+/*
+ * The optString global tells getopt_long() which options we
+ * support, and which options have arguments.
+ * 
+ * The longOpts global tells getopt_long() which long options
+ * we support, and which long options have arguments.
+ */
+
+struct globalArgs_t {
+  double timeLimit;				// -t option
+  double gapLimit;                              // -g option
+} globalArgs;
+
+static const char *optString = "t:g:h?";
+
+static const struct option longOpts[] = {
+  { "time-limit", required_argument, NULL, 't' },
+  { "gap-limit", required_argument, NULL, 'g'},
+  { "help", no_argument, NULL, 'h' },
+  { NULL, no_argument, NULL, 0 }
+};
+
+void print_args( void )
+{
+  printf("heursec is executed with the following parameters:\n");
+  printf( "timeLimit: %f\n", globalArgs.timeLimit );
+  printf( "gapLimit: %f\n", globalArgs.gapLimit );
+}
+
+bool verify_args()
+{
+  bool proper = true;
+  if (globalArgs.gapLimit != 100 && globalArgs.timeLimit == -1)
+    {
+      cout << "Error: Specify either only time limit or both time limit and gap limit. e.g., -t 1 OR -t 1 -g 10" << endl;
+      return false;
+    }
+
+  return proper;
+
+}
+
+
+int execute()
 {
   //>>>>>>>>>>>>>>Sorting Tasks<<<<<<<<<<<<<<<<<//
   //TODO:sorting
@@ -84,10 +145,10 @@ int main()
   */
 
   // All the relevant results are stored in pr.
-  SchedulingProblemResult pr( sp->name() );
+  SchedulingProblemResult pr( sp );
 
   // solution-details.txt stores the details of solutions, e.g. schedules
-  ofstream foutRes("solution-peak-minimization-details.txt");
+  ofstream foutRes("solution-peak-and-cost-minimization-details.txt");
   sp->print(foutRes);
 
 
@@ -144,7 +205,7 @@ int main()
 	
   // write the result to file
   foutRes << "------------------------" << endl;
-  foutRes << "Peak minimization by ASAP" << endl;
+  foutRes << "Scheduling results by ASAP" << endl;
   foutRes << "------------------------" << endl;
   if(pr.isFeasibleASAP)
     {
@@ -167,6 +228,12 @@ int main()
 
 
 
+#ifdef PEAK_MINIMIZATION_PROBLEM
+  ///////////////////////////////////////////////
+  // COST MINIMIZATION WITH PEAK CONSTRAINT //
+  ///////////////////////////////////////////////
+
+
   // STEP 1
   // - First find optimum minimum peak without Pmax constraint by ILP
   // =======================================================================
@@ -174,7 +241,7 @@ int main()
   // =======================================================================
 
   sp->setPMax( numeric_limits<double>::max() );
-  ILPScheduler ilps(/*globalArgs.timeLimit, globalArgs.gapLimit,*/ sp);  
+  ILPScheduler ilps(globalArgs.timeLimit, globalArgs.gapLimit, sp);  
   //  SchedulingSolution* minCostSol = ilps.schedule(MINIMIZE, COST);
   SchedulingSolution* minPeakSol = ilps.schedule(MINIMIZE, PEAK);
   SchedulingSolution* minPeakParetoSol = minPeakSol;
@@ -751,9 +818,14 @@ int main()
   // ////////////////////////////////////////////////////////////////////
 
 
+  // END of COST MINIMIZATION WITH PEAK CONSTRAINT PROBLEM
+#endif
 
 
 
+
+
+#ifdef COST_MINIMIZATION_PROBLEM
   ///////////////////////////////////////////////
   // COST MINIMIZATION WITHOUT PEAK CONSTRAINT //
   ///////////////////////////////////////////////
@@ -765,7 +837,7 @@ int main()
   // =======================================================================
 
   sp->setPMax( numeric_limits<double>::max() );
-  ILPScheduler ilps_costmin(/*globalArgs.timeLimit, globalArgs.gapLimit,*/ sp);  
+  ILPScheduler ilps_costmin(globalArgs.timeLimit, globalArgs.gapLimit, sp);  
   SchedulingSolution* minCostSol = ilps_costmin.schedule(MINIMIZE, COST);
   SchedulingSolution* minCostParetoSol = minCostSol;
 
@@ -1113,6 +1185,8 @@ int main()
   ////////////////////////////////////////////////////////////////////
 
 
+  // END OF COST MINIMIZATION PROBLEM
+#endif
 
 
 
@@ -1122,11 +1196,11 @@ int main()
 
 
 
-  // print the peak minimization results
+  // print the peak and cost minimization results
   pr.print(cout);
 
-  // write the peak minimization results in a file
-  ofstream fout("solution-peak-minimization.txt");
+  // write the peak and cost minimization results in a file
+  ofstream fout("solution-peak-and-cost-minimization.txt");
   fout << pr << endl;
   fout.close();
 
@@ -1201,3 +1275,56 @@ int main()
   //	bestCostSelectiveFunc(J, /*emptyTab,*/ csminBCS, &minCost, P_max, p_min, P_H);
   //	cout << "min Cost selection tree's Cost is " << minCost << endl;
 }
+
+
+
+
+
+
+
+int main( int argc, char *argv[] )
+{
+  int opt = 0;
+  int longIndex = 0;
+	
+  /* Initialize globalArgs before we get to work. */
+  globalArgs.timeLimit = -1;
+  globalArgs.gapLimit = 100;
+	
+  /* Process the arguments with getopt_long(), then 
+   * populate globalArgs. 
+   */
+  opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
+  while( opt != -1 ) {
+    switch( opt ) {
+    case 't':
+      globalArgs.timeLimit = atof(optarg);
+      break;
+    case 'g':
+      globalArgs.gapLimit = atof(optarg);
+      break;
+    case 'h':	/* fall-through is intentional */
+    case '?':
+      usage();
+      break;
+	    	    
+    default:	    /* You won't actually get here. */
+      break;
+    }
+	  
+    opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
+  }
+
+  if( !verify_args() )
+    {
+      usage();
+      return EXIT_FAILURE;
+    }
+
+  print_args();
+	
+  execute();
+
+  return EXIT_SUCCESS;
+}
+

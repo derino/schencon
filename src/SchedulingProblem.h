@@ -58,7 +58,9 @@ class SchedulingProblem
   void setN(int); // #tasks
   int L();
   void setL(int); // scheduling length
+  double LPAR();
   void setLPAR(double);
+  double PrR();
   void setPrR(double);
   void setPMin(Signal<double>*);
   Signal<double>* pMin();

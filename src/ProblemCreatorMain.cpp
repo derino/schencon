@@ -84,7 +84,8 @@ Task* createTask(int i, bool preemptable, float par)
     j->setD( tp*R );
   else
     {
-      int freedom = min( rand()%(L - tp*R), 5); // 5 is max. possible freedom. our choice.
+      int maxFreedom = 5; // max. possible freedom.
+      int freedom = min( rand()%(L - tp*R), maxFreedom); 
       j->setD( freedom + tp*R ); //deadline = duration plus L-tp*R arasinda random bir sayi.
     }
 

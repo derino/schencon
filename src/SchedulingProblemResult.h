@@ -38,14 +38,16 @@
 #include <iostream>
 using namespace std;
 
+#include "SchedulingProblem.h"
+
 class SchedulingProblemResult
 {
  public:
-  SchedulingProblemResult(string name);
+  SchedulingProblemResult(SchedulingProblem*);
   ~SchedulingProblemResult();
   void print(ostream&);
 
-  string name;
+  SchedulingProblem* sp;
 
   bool isFeasibleASAP;
   double minPeakASAP;

@@ -1,6 +1,6 @@
 #include "SchedulingProblemResult.h"
 
-SchedulingProblemResult::SchedulingProblemResult(string _name) : name(_name)
+SchedulingProblemResult::SchedulingProblemResult(SchedulingProblem* _sp) : sp(_sp)
 {
   
 }
@@ -12,7 +12,7 @@ SchedulingProblemResult::~SchedulingProblemResult()
 void SchedulingProblemResult::print(ostream& out)
 {
   out << ">>>> RESULTS <<<<" << endl;
-  out << "Problem: " << name << endl;
+  out << "Problem: " << sp->name() << endl;
 
   if(isFeasibleASAP)
     out << "Min. peak point by ASAP: (" << minPeakASAP << ", " << minCostASAP << ")" << endl;
@@ -81,8 +81,79 @@ void SchedulingProblemResult::print(ostream& out)
 
 }
 
+// prints tab-spaced results in a single line to be processed in oocalc later on.
+// -1 for infeasible
+// PACM: peak-aware cost minimization problem
+// CM: cost minimization problem
+// Format: #tasks \t Schedule length \t Ratio of jobs with low PAR \t Ratio of preemptable jobs \t ASAP.peak \t ASAP.cost \t PACM.ILP.peak \t PACM.ILP.cost \t PACM.Lee.peak \t PACM.Lee.cost \t PACM.FG.peak \t PACM.FG.cost \t PACM.GG.peak \t PACM.GG.cost \t PACM.GF.peak \t PACM.GF.cost \t CM.ILP.peak \t CM.ILP.cost \t CM.FG.peak \t CM.FG.cost \t CM.GG.peak \t CM.GG.cost \t CM.GF.peak \t CM.GF.cost
 std::ostream& operator<<(std::ostream& out, SchedulingProblemResult& pr)
 {
-  pr.print(out);
+  //  pr.print(out);
+  out << pr.sp->N() << "\t" << pr.sp->L() << "\t" << pr.sp->LPAR() << "\t" << pr.sp->PrR() << "\t";
+
+  if(pr.isFeasibleASAP)
+    out << pr.minPeakASAP << "\t" << pr.minCostASAP << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasibleILP) 
+    {
+      out << pr.minPeakOfPeakParetoILP << "\t" << pr.minCostOfPeakParetoILP << "\t";
+    }
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasibleLee)
+    out << pr.minPeakLee << "\t" << pr.minCostLee << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasiblePACMFG_wLee_Pmax)
+    out << pr.minPeakPACMFG_wLee_Pmax << "\t" << pr.minCostPACMFG_wLee_Pmax << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasiblePACMGG_wLee_Pmax)
+    out << pr.minPeakPACMGG_wLee_Pmax << "\t" << pr.minCostPACMGG_wLee_Pmax << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasiblePACMGF_wLee_Pmax)
+    out << pr.minPeakPACMGF_wLee_Pmax << "\t" << pr.minCostPACMGF_wLee_Pmax << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+  
+
+  // not needed
+  // if(isFeasiblePACMFG_wILP_Pmax)
+  //   out << "Solution by PACMFG with Pmax = ILP: (" << minPeakPACMFG_wILP_Pmax << ", " << minCostPACMFG_wILP_Pmax << ")" << endl;
+  // else
+  //   out << "Infeasible solution by PACMFG with Pmax = ILP" << endl;
+
+
+
+  // Cost min
+  if(pr.isFeasibleILP_costmin) 
+    {
+      out << pr.minPeakOfCostParetoILP << "\t" << pr.minCostOfCostParetoILP << "\t";
+    }
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasiblePACMFG_costmin)
+    out << pr.minPeakPACMFG_costmin << "\t" << pr.minCostPACMFG_costmin << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasiblePACMGG_costmin)
+    out << pr.minPeakPACMGG_costmin << "\t" << pr.minCostPACMGG_costmin << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasiblePACMGF_costmin)
+    out << pr.minPeakPACMGF_costmin << "\t" << pr.minCostPACMGF_costmin << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
   return out;
 }

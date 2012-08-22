@@ -129,9 +129,19 @@ void SchedulingProblem::setPH()
   _PH = new Signal<double>("P_H", _L, 0.0);
 }
 
+double SchedulingProblem::LPAR()
+{
+  return _LPAR;
+}
+
 void SchedulingProblem::setLPAR(double lpar)
 {
   _LPAR = lpar;
+}
+
+double SchedulingProblem::PrR()
+{
+  return _PrR;
 }
 
 void SchedulingProblem::setPrR(double prr)
@@ -178,8 +188,6 @@ void SchedulingProblem::print(ostream& out)
 
 void SchedulingProblem::write()
 {
-  // TODO Yucel
-
   // write problem.txt file.
   ofstream fout1("problem.txt");
   //ofstream fout1( (filename+".txt").c_str() );
@@ -217,5 +225,4 @@ void SchedulingProblem::write()
 	<< _PMaxHigh << endl;
   fout5.close();
   
-  // TODO
 }
