@@ -2,7 +2,20 @@
 
 SchedulingProblemResult::SchedulingProblemResult(SchedulingProblem* _sp) : sp(_sp)
 {
-  
+  isFeasibleASAP = false;
+  isFeasibleILP = false;
+  isFeasibleLee = false;
+  isFeasiblePACMFG_wLee_Pmax = false;
+  isFeasiblePACMGG_wLee_Pmax = false;
+  isFeasiblePACMGF_wLee_Pmax = false;
+  // not used at the moment
+  isFeasiblePACMFG_wILP_Pmax = false;
+
+  // Cost min   
+  isFeasibleILP_costmin = false;
+  isFeasiblePACMFG_costmin = false;
+  isFeasiblePACMGG_costmin = false;
+  isFeasiblePACMGF_costmin = false;
 }
 
 SchedulingProblemResult::~SchedulingProblemResult()
@@ -41,11 +54,12 @@ void SchedulingProblemResult::print(ostream& out)
   else
     out << "Infeasible solution by PACMGG with Pmax = Lee" << endl;
 
+#ifdef PACMGF
   if(isFeasiblePACMGF_wLee_Pmax)
     out << "Solution by PACMGF with Pmax = Lee: (" << minPeakPACMGF_wLee_Pmax << ", " << minCostPACMGF_wLee_Pmax << ")" << endl;
   else
     out << "Infeasible solution by PACMGF with Pmax = Lee" << endl;
-  
+#endif
 
   // not needed
   // if(isFeasiblePACMFG_wILP_Pmax)
@@ -73,11 +87,12 @@ void SchedulingProblemResult::print(ostream& out)
   else
     out << "Infeasible solution by PACMGG" << endl;
 
+#ifdef PACMGF
   if(isFeasiblePACMGF_costmin)
     out << "Solution by PACMGF: (" << minPeakPACMGF_costmin << ", " << minCostPACMGF_costmin << ")" << endl;
   else
     out << "Infeasible solution by PACMGF" << endl;
-
+#endif
 
 }
 

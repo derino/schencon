@@ -2,6 +2,7 @@
 #define PEAK_MINIMIZATION_PROBLEM
 #define COST_MINIMIZATION_PROBLEM
 
+//#define PACMGF
 
 #include <iostream>
 #include <stdio.h>
@@ -606,7 +607,7 @@ int execute()
 
 
 
-
+#ifdef PACMGF
   // STEP 3.3
   // - Find the peak by our PACMGF heuristic given Lee's peak as the Pmax constraint
   // =======================================================================
@@ -706,7 +707,7 @@ int execute()
   ////////////////////////////////////////////////////////////////////
   // End of PACMGF - STEP 3.3 ////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////
-
+#endif
 
 
 
@@ -1027,7 +1028,7 @@ int execute()
       //cout << "No feasible schedule found!" << endl;
     }
   else
-    pr.isFeasiblePACMGG_wLee_Pmax = true;
+    pr.isFeasiblePACMGG_costmin = true;
 	
   for(std::vector<TSolution*>::iterator it=pNondominatedSet6_2->begin(); it != pNondominatedSet6_2->end(); it++)
     {
@@ -1083,7 +1084,7 @@ int execute()
 
 
 
-
+#ifdef PACMGF
   // STEP 6.3
   // - Find the cost by our PACMGF heuristic without the Pmax constraint
   // =======================================================================
@@ -1183,7 +1184,7 @@ int execute()
   ////////////////////////////////////////////////////////////////////
   // End of PACMGF - STEP 6.3 ////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////
-
+#endif
 
   // END OF COST MINIMIZATION PROBLEM
 #endif

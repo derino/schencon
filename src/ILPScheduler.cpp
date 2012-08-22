@@ -301,6 +301,8 @@ ILPScheduler::optimize(SchedulingProblem* sp, IloModel model, IloBoolVarArray x,
   // Turn off CPLEX logging
   cplex.setParam(IloCplex::MIPDisplay, 0);
 
+  // For the CPLEX bug: https://www.ibm.com/developerworks/forums/thread.jspa?threadID=450253
+  cplex.setParam(IloCplex::Probe, -1);
   // Reduce optimality tolerance
   //  cplex.setParam(IloCplex::EpOpt, 0.000000001);
   //cplex.setParam(IloCplex::EpGap, 0.0);
