@@ -1,4 +1,11 @@
 #!@BASH@
+#
+# Executes heursec for all the problem folders under the working directory.
+# The arguments given to heursec_all are passed as is to heursec.
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
 
 folder_list=$(ls)
 
@@ -7,7 +14,7 @@ do
     echo 'Entering into ' $folder  '...'
     cd $folder
     echo 'Executing heursec...'
-    time heursec --time-limit 60 --gap-limit 0.001 # &> out.log
+    time ${bindir}/heursec $@        # &> out.log
     echo 'Exiting ' $folder '...'
     cd ..
 done
