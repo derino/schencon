@@ -44,6 +44,6 @@ AC_CONFIG_FILES([
 	doc/Makefile
 	m4/Makefile
 	src/Makefile
-	scripts/Makefile
-	scripts/heursec_all])
+	util/Makefile
+	util/heursec_all])
 AC_OUTPUT
