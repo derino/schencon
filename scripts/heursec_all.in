@@ -1,0 +1,13 @@
+#!@BASH@
+
+folder_list=$(ls)
+
+for folder in $folder_list
+do
+    echo 'Entering into ' $folder  '...'
+    cd $folder
+    echo 'Executing heursec...'
+    time heursec --time-limit 60 --gap-limit 0.001 # &> out.log
+    echo 'Exiting ' $folder '...'
+    cd ..
+done
