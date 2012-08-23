@@ -207,7 +207,7 @@ bool SchedulingSolution::dominatesAbsolute(SchedulingSolution* ss)
 
 std::ostream& operator<<(std::ostream& os, SchedulingSolution& ss)
 {
-  return os << ss.getCost() << "\t" << ss.getPeak() << "\t@" << ss.getSolutionTime() << "\tgap:" << ss.getGap();
+  return os << ss.getPeak() << "\t" << ss.getCost() << "\t@" << ss.getSolutionTime() << "\tgap:" << ss.getGap();
 }
 
 void SchedulingSolution::print(ostream& out)
@@ -215,8 +215,8 @@ void SchedulingSolution::print(ostream& out)
   //  out << "Solution status = " << status << endl;
   if (status == OPTIMAL_SOLUTION/*IloAlgorithm::Optimal*/ || status == FEASIBLE_SOLUTION)
     {
-      out << "cost  = " << getCost() << endl;
       out << "peak  = " << getPeak() << endl;
+      out << "cost  = " << getCost() << endl;
 
       out << "Xnml as schedules: " << endl;
 
