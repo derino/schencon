@@ -7,14 +7,12 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 
-folder_list=$(ls)
+folder_list=$(find . -maxdepth 1 -mindepth 1 -type d)
 
-for folder in $folder_list
+for folder in $folder_list;
 do
-    echo 'Entering into ' $folder  '...'
-    cd $folder
-    echo 'Executing heursec...'
-    time ${bindir}/heursec $@        # &> out.log
-    echo 'Exiting ' $folder '...'
-    cd ..
-done
+    echo 'Entering into ' $folder  '...';
+    cd $folder;
+    ${bindir}/heursec $@;
+    cd ..;
+done;
