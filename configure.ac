@@ -45,5 +45,7 @@ AC_CONFIG_FILES([
 	m4/Makefile
 	src/Makefile
 	util/Makefile
-	util/heursec_all])
+	util/heursec_all
+	util/schencon_plot_pmin
+	util/schencon_plot_asap])
 AC_OUTPUT

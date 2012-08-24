@@ -1,0 +1,8 @@
+#!@BASH@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+
+gnuplot ${bindir}/graphs_pmin.gp
+echo 'created graphs_pmin.eps'
+
