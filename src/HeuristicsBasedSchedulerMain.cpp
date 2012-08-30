@@ -1,6 +1,6 @@
 //#define DEBUG
-#define PEAK_MINIMIZATION_PROBLEM
-#define COST_MINIMIZATION_PROBLEM
+//#define PEAK_MINIMIZATION_PROBLEM
+//#define COST_MINIMIZATION_PROBLEM
 
 //#define PACMGF
 
@@ -389,6 +389,8 @@ int execute()
   ////////////////////////////////////////////////////////////////////
   // End of Lee - STEP 2 /////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////
+
+
 
 
 
@@ -821,6 +823,164 @@ int execute()
 
   // END of COST MINIMIZATION WITH PEAK CONSTRAINT PROBLEM
 #endif
+
+
+
+
+
+
+
+
+
+  // TODO delete this duplicate
+  // STEP 2
+  // - Find the min peak obtained by Lee
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> Lee <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  // Peak minimization with full tree search for NP and job pieces to min Ptot slots greedy heuristics for P jobs.
+  // =======================================================================
+
+  // define the problem
+  // fill in the global variables of MOMH lib.
+  // specify objectives
+  NumberOfObjectives = 2;
+  Objectives.resize(NumberOfObjectives);
+  // comp.time objective
+  Objectives[0].ObjectiveType = _Min;
+  Objectives[0].bActive = true;
+  // comm.cost objective
+  Objectives[1].ObjectiveType = _Min;
+  Objectives[1].bActive = true;
+
+  // constraints
+  NumberOfConstraints = 0;
+  Constraints.resize(NumberOfConstraints);
+
+  ////////////////////////////////////////////////////////////////////
+  TNondominatedSet* pNondominatedSet = new TListSet < SchedulingMOMHSolution >;
+  //      MOS(J, emptyTab, pNondominatedSet, P_max, p_min, P_H);
+  vector<Signal<int>*> emptyTab;
+	
+  // PACM: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // TODO: Sort jobs by Energy / (TODO for later: by Peak values)
+  // allocTab( NP_COST_MIN_WITH_TREE_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+  // ASAP Scheduling
+  //allocTab( NP_ASAP_SCHEDULING, P_ASAP_SCHEDULING, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+  // GG: Cost minimization with Full tree search for NP jobs and peak to min price greedy heuristic for P jobs.
+  // TODO: Sort jobs by Energy / (TODO for later: by Peak values)
+  //allocTab( NP_COST_MIN_WITH_GREEDY_SEARCH, P_COST_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+
+  // Lee: Peak minimization with full tree search for NP and job pieces to min Ptot slots greedy heuristics for P jobs.
+  // Sorts the tasks according to their preemption status; NP tasks goes first..
+  sort(sp->J()->begin(), sp->J()->end(), sortTasksViaPreemption);
+  sp->setPMax( numeric_limits<double>::max() );
+  allocTab( NP_PEAK_MIN_WITH_TREE_SEARCH, P_PEAK_MINIMIZATION, *(sp->J()), emptyTab, pNondominatedSet, sp->PMax(), *(sp->pMin()), *(sp->PH()) );
+	
+	
+  double mCost = numeric_limits<double>::max();
+  // Cost minTab
+  //vector<Signal<int>*>* minCostTab = NULL;
+  double mPeak = numeric_limits<double>::max();
+  // Peak minTab 
+  vector<Signal<int>*>* minPeakTab = NULL;
+	
+  if (pNondominatedSet->iSetSize == 0)
+    {
+      pr.isFeasibleLee = false;
+      cout << "No feasible schedule found!" << endl;
+    }
+  else
+    pr.isFeasibleLee = true;
+	
+  for(std::vector<TSolution*>::iterator it=pNondominatedSet->begin(); it != pNondominatedSet->end(); it++)
+    {
+      SchedulingMOMHSolution* msIt = (SchedulingMOMHSolution*) *it;
+      //cout << "Pareto\t" << *msIt << endl;
+      //printTab( *(msIt->getTab()) );
+	  
+      /*if (mCost > msIt->getCost())
+	{
+	mCost = msIt->getCost();
+	//minCostTab = msIt->getTab();
+	}*/
+      if (mPeak > msIt->getPeak())
+	{
+	  mPeak = msIt->getPeak();
+	  mCost = msIt->getCost();
+	  minPeakTab = msIt->getTab();
+	}
+      //delete msIt;
+    }
+  pr.minPeakLee = mPeak;
+  pr.minCostLee = mCost;
+
+  // write the result to file
+  foutRes << "------------------------" << endl;
+  foutRes << "Peak minimization by Lee" << endl;
+  foutRes << "------------------------" << endl;
+  if(pr.isFeasibleLee)
+    {
+      foutRes << "Min. peak: " << pr.minPeakLee << endl;
+      foutRes << "Min. cost: " << pr.minCostLee << endl;
+      printSchedule(foutRes, *(sp->J()), *minPeakTab);
+    }
+  else
+    foutRes << "Infeasible solution by Lee!" << endl;
+  foutRes << endl;
+
+  // delete solutions. not needed because delete msIt above already deletes them.
+  pNondominatedSet->DeleteAll();
+  delete pNondominatedSet;
+  ////////////////////////////////////////////////////////////////////
+  // End of Lee - STEP 2 /////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+
+
+  // TODO: To be moved above but now we just want the result of this.
+  // STEP 2.5
+  // - Find minimum cost with Pmax constraint = Lee by ILP
+  // =======================================================================
+  // >>>>>>>>>>>>>>>> ILP with peak = Lee <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  // =======================================================================
+  sp->setPMax( numeric_limits<double>::max() );
+  ILPScheduler ilps_costmin_wLee_Pmax(globalArgs.timeLimit, globalArgs.gapLimit, sp);  
+  // Find the min cost Pareto with peak <= Lee
+  SchedulingSolution* minCostSol_wLee_Pmax = ilps_costmin_wLee_Pmax.schedule(MINIMIZE, COST, LEQ, pr.minPeakLee );
+
+  if (minCostSol_wLee_Pmax->getStatus() == OPTIMAL_SOLUTION || minCostSol_wLee_Pmax->getStatus() == FEASIBLE_SOLUTION)
+    {
+      pr.isFeasibleILP_wLee_Pmax = true;
+      pr.minPeakILP_wLee_Pmax = minCostSol_wLee_Pmax->getPeak();
+      pr.minCostILP_wLee_Pmax = minCostSol_wLee_Pmax->getCost();
+    }
+  else
+    pr.isFeasibleILP_wLee_Pmax = false;
+
+  // write the result in file
+  foutRes << "------------------------" << endl;
+  foutRes << "Cost minimization with peak = Lee by ILP" << endl;
+  foutRes << "------------------------" << endl;
+  minCostSol_wLee_Pmax->print(foutRes);
+  foutRes << endl;
+
+  // Relevant results of the ILP solution
+  // minCostSol->getCost();
+  // minPeakSol->getPeak()
+
+
+  // cout << *minCostSol << endl;
+  // cout << *minPeakSol << endl;
+
+  delete minCostSol_wLee_Pmax;
+  ////////////////////////////////////////////////////////////////////
+  // End of ILP cost minimization with peak = Lee - STEP 2.5 /////////
+  ////////////////////////////////////////////////////////////////////
+
+
+
 
 
 

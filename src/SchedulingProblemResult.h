@@ -61,6 +61,10 @@ class SchedulingProblemResult
   double minPeakLee;
   double minCostLee;
 
+  bool isFeasibleILP_wLee_Pmax;
+  double minPeakILP_wLee_Pmax;
+  double minCostILP_wLee_Pmax;
+
   bool isFeasiblePACMFG_wLee_Pmax;
   double minPeakPACMFG_wLee_Pmax;
   double minCostPACMFG_wLee_Pmax;

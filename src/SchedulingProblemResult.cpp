@@ -44,6 +44,11 @@ void SchedulingProblemResult::print(ostream& out)
   else
     out << "Infeasible solution by Lee" << endl;
 
+  if(isFeasibleILP_wLee_Pmax)
+    out << "Solution by ILP with Pmax = Lee: (" << minPeakILP_wLee_Pmax << ", " << minCostILP_wLee_Pmax << ")" << endl;
+  else
+    out << "Infeasible solution by ILP with Pmax = Lee" << endl;
+
   if(isFeasiblePACMFG_wLee_Pmax)
     out << "Solution by PACMFG with Pmax = Lee: (" << minPeakPACMFG_wLee_Pmax << ", " << minCostPACMFG_wLee_Pmax << ")" << endl;
   else
@@ -100,7 +105,7 @@ void SchedulingProblemResult::print(ostream& out)
 // -1 for infeasible
 // PACM: peak-aware cost minimization problem
 // CM: cost minimization problem
-// Format: #tasks \t Schedule length \t Ratio of jobs with low PAR \t Ratio of preemptable jobs \t ASAP.peak \t ASAP.cost \t PACM.ILP.peak \t PACM.ILP.cost \t PACM.Lee.peak \t PACM.Lee.cost \t PACM.FG.peak \t PACM.FG.cost \t PACM.GG.peak \t PACM.GG.cost \t PACM.GF.peak \t PACM.GF.cost \t CM.ILP.peak \t CM.ILP.cost \t CM.FG.peak \t CM.FG.cost \t CM.GG.peak \t CM.GG.cost \t CM.GF.peak \t CM.GF.cost
+// Format: #tasks \t Schedule length \t Ratio of jobs with low PAR \t Ratio of preemptable jobs \t ASAP.peak \t ASAP.cost \t PACM.ILP.peak \t PACM.ILP.cost \t PACM.Lee.peak \t PACM.Lee.cost \t PACM.ILP@Lee.peak \t PACM.ILP@Lee.cost \t PACM.FG.peak \t PACM.FG.cost \t PACM.GG.peak \t PACM.GG.cost \t PACM.GF.peak \t PACM.GF.cost \t CM.ILP.peak \t CM.ILP.cost \t CM.FG.peak \t CM.FG.cost \t CM.GG.peak \t CM.GG.cost \t CM.GF.peak \t CM.GF.cost
 std::ostream& operator<<(std::ostream& out, SchedulingProblemResult& pr)
 {
   //  pr.print(out);
@@ -120,6 +125,11 @@ std::ostream& operator<<(std::ostream& out, SchedulingProblemResult& pr)
 
   if(pr.isFeasibleLee)
     out << pr.minPeakLee << "\t" << pr.minCostLee << "\t";
+  else
+    out << -1 << "\t" << -1 << "\t";
+
+  if(pr.isFeasibleILP_wLee_Pmax)
+    out << pr.minPeakILP_wLee_Pmax << "\t" << pr.minCostILP_wLee_Pmax << "\t";
   else
     out << -1 << "\t" << -1 << "\t";
 
