@@ -27,6 +27,7 @@ public:
   T operator[](int);
   T at(int);
   string getName();
+  void setName(string);
   int size();
   double getEnergy();
   void setValueAt(int, T);
@@ -161,6 +162,13 @@ string Signal<T>::getName()
 {
   return _name;
 }
+
+template <typename T>
+void Signal<T>::setName(string name)
+{
+  _name = name;
+}
+
 
 template <typename T>
 int Signal<T>::size()

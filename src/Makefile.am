@@ -25,7 +25,7 @@ AM_LDFLAGS += -m32
 endif !BIT64CPLEXSYSTEM
 LDADD = -lilocplex -lcplex -lconcert -lm
 
-bin_PROGRAMS    = ilpsec problemcreator heursec validateschedule
+bin_PROGRAMS    = ilpsec problemcreator heursec plotpeaks validateschedule
 #lib_LIBRARIES   = libfoo1.a libfoo2.a libfoo3.a ....
 #check_PROGRAMS  = test1 test2 test3 ....
 #TESTS           = $(check_PROGRAMS)
@@ -85,6 +85,33 @@ heursec_SOURCES = HeuristicsBasedSchedulerMain.cpp \
 heursec_LDADD = $(LIBMOMH_LIBS) $(LDADD)
 
 heursec_CXXFLAGS = $(LIBMOMH_CFLAGS)
+
+
+plotpeaks_SOURCES = PlotPeaksMain.cpp \
+		  SchedulingProblem.h \
+		  SchedulingProblem.cpp \
+		  SchedulingProblemReader.h \
+		  SchedulingProblemReader.cpp \
+		  SchedulingMOMHSolution.hpp \
+		  SchedulingMOMHSolution.cpp \
+		  Signal.h \
+		  Tab.h \
+		  Task.h \
+		  Task.cpp \
+		  util.h \
+		  ILPScheduler.cpp \
+		  ILPScheduler.h \
+		  InfeasibleSolutionException.h \
+		  SchedulingSolutionStatusAdapter.h \
+		  SchedulingSolution.h \
+		  SchedulingSolution.cpp \
+		  SchedulingProblemResult.h \
+		  SchedulingProblemResult.cpp 
+
+plotpeaks_LDADD = $(LIBMOMH_LIBS) $(LDADD)
+
+plotpeaks_CXXFLAGS = $(LIBMOMH_CFLAGS)
+
 
 
 validateschedule_SOURCES = ScheduleValidationTest.cpp \
